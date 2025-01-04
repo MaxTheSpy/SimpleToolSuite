@@ -4,5 +4,6 @@
   "version": "1.0",
   "author": "Your Name",
   "description": "Removes illegal characters from file and folder names.",
-  "main": "IllegalCharacterReplacement.py"
+  "main": "IllegalCharacterReplacement.py",
+  "required_version": "1.0.2"
 }
