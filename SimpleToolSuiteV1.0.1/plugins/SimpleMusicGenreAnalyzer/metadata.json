@@ -1,7 +1,8 @@
 {
   "name": "Simple Music Genre Analyzer",
+  "alias": "SMGA",
   "version": "1.0",
-  "author": "Your Name",
+  "author": "MaxTheSpy",
   "description": "A tool to analyze and categorize music genres from audio files.",
   "main": "SimpleMusicGenreAnalyzer.py",
   "dependencies": ["mutagen"]

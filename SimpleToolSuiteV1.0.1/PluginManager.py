@@ -3,22 +3,28 @@ import importlib
 import json
 import subprocess
 
-class PluginManager:
-    def __init__(self, plugin_dir="plugins"):
-        self.plugin_dir = plugin_dir
+def discover_plugins(self):
+    plugins = []
+    if not os.path.exists(self.plugin_dir):
+        os.makedirs(self.plugin_dir)
 
-    def discover_plugins(self):
-        """Discover all plugins in the plugin directory."""
-        plugins = []
-        for plugin_name in os.listdir(self.plugin_dir):
-            plugin_path = os.path.join(self.plugin_dir, plugin_name)
-            metadata_file = os.path.join(plugin_path, "metadata.json")
-            if os.path.isdir(plugin_path) and os.path.isfile(metadata_file):
-                with open(metadata_file, "r") as f:
-                    metadata = json.load(f)
-                    metadata["path"] = plugin_path
-                    plugins.append(metadata)
-        return plugins
+    for folder in os.listdir(self.plugin_dir):
+        plugin_path = os.path.join(self.plugin_dir, folder)
+        if os.path.isdir(plugin_path):
+            metadata_path = os.path.join(plugin_path, "metadata.json")
+            if os.path.exists(metadata_path):
+                with open(metadata_path, "r") as meta_file:
+                    try:
+                        metadata = json.load(meta_file)
+                        plugins.append({
+                            "name": metadata.get("name", folder),
+                            "alias": metadata.get("alias", ""),
+                            "path": plugin_path,
+                            "main": metadata.get("main", "main.py")
+                        })
+                    except json.JSONDecodeError:
+                        print(f"Invalid metadata.json in {folder}")
+    return plugins
 
     def install_dependencies(self, plugin_metadata):
         """Install dependencies for a plugin."""
