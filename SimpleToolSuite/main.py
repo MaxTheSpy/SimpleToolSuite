@@ -95,21 +95,58 @@ def create_ui():
                 messagebox.showerror("Error", "Plugin does not have a main function")
 
     def download_plugin():
-        repo_url = "https://github.com/MaxTheSpy/SimpleToolSuite/contents/SimpleToolSuiteV1.0.1/plugins"
+        repo_url = "https://api.github.com/repos/MaxTheSpy/SimpleToolSuite/contents/SimpleToolSuiteV1.0.1/plugins"
         plugin_name = simpledialog.askstring("Download Plugin", "Enter the plugin name or alias:")
-
         if not plugin_name:
             return
 
-        # Resolve alias if provided
+        # Resolve the plugin alias
         plugin_name = plugin_alias.get(plugin_name, plugin_name)
 
-        success = plugin_manager.download_plugin(repo_url, plugin_name)
-        if success:
-            messagebox.showinfo("Success", f"Plugin '{plugin_name}' downloaded and installed successfully.")
-            load_plugins()  # Refresh the plugin list after download
-        else:
-            messagebox.showerror("Error", f"Failed to download plugin '{plugin_name}'.")
+        # Build the URL for the plugin directory
+        plugin_url = f"{repo_url}/{plugin_name}"
+        print(f"Fetching plugin from: {plugin_url}")
+
+        # Make the request to the GitHub API
+        response = requests.get(plugin_url)
+        if response.status_code != 200:
+            print(f"Failed to fetch plugin. Status code: {response.status_code}")
+            print(f"Response: {response.text}")
+            messagebox.showerror("Error", f"Failed to fetch plugin '{plugin_name}'.")
+            return
+
+        try:
+            plugin_files = response.json()
+            if not isinstance(plugin_files, list):
+                print("Unexpected response format from GitHub API.")
+                messagebox.showerror("Error", "Unexpected response format from GitHub.")
+                return
+        except json.JSONDecodeError:
+            print("Failed to decode JSON response.")
+            messagebox.showerror("Error", "Failed to decode response from GitHub.")
+            return
+
+        # Create the plugin directory locally
+        plugin_dir = os.path.join(plugin_manager.plugin_dir, plugin_name)
+        os.makedirs(plugin_dir, exist_ok=True)
+
+        # Download each file in the plugin directory
+        for file in plugin_files:
+            if file['type'] == 'file':
+                file_url = file['download_url']
+                file_path = os.path.join(plugin_dir, file['name'])
+                file_response = requests.get(file_url)
+                if file_response.status_code == 200:
+                    with open(file_path, 'wb') as f:
+                        f.write(file_response.content)
+                    print(f"Downloaded file: {file['name']}")
+                else:
+                    print(f"Failed to download file: {file['name']}. Status: {file_response.status_code}")
+            elif file['type'] == 'dir':
+                print(f"Skipping subdirectory: {file['name']} (not supported yet)")
+
+        messagebox.showinfo("Success", f"Plugin '{plugin_name}' downloaded successfully.")
+
 
 
     # Buttons
