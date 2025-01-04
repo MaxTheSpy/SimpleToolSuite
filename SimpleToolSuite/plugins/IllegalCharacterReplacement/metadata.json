@@ -1,0 +1,8 @@
+{
+  "name": "Illegal Character Replacement",
+  "alias": "ICRT",
+  "version": "1.0",
+  "author": "Your Name",
+  "description": "Removes illegal characters from file and folder names.",
+  "main": "IllegalCharacterReplacement.py"
+}
