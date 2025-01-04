@@ -1,10 +1,15 @@
 import os
 import importlib.util
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
+from tkinter import simpledialog
+from tkinter import ttk, messagebox, filedialog
 import json
 import requests
 
+plugin_alias = {
+    "SMGA": "SimpleMusicGenreAnalyzer",
+    # Add more aliases here
+}
 
 class PluginManager:
     def __init__(self, plugin_dir="plugins"):
@@ -25,8 +30,9 @@ class PluginManager:
                             metadata = json.load(meta_file)
                             plugins.append({
                                 "name": metadata.get("name", folder),
+                                "alias": metadata.get("alias", folder),
                                 "path": plugin_path,
-                                "main": metadata.get("main", "main.py")
+                                "main": metadata.get("main", "main.py"),
                             })
                         except json.JSONDecodeError:
                             print(f"Invalid metadata.json in {folder}")
@@ -40,6 +46,11 @@ class PluginManager:
             spec.loader.exec_module(module)
             return module
         return None
+
+    def download_plugin(self, repo_url, plugin_name):
+        """Simulates downloading a plugin from a repository."""
+        # Replace with real download logic if necessary
+        print(f"Simulated download for {plugin_name} from {repo_url}")
 
 
 def create_ui():
@@ -63,55 +74,42 @@ def create_ui():
         plugins = plugin_manager.discover_plugins()
         plugins_listbox.delete(0, tk.END)
         for plugin in plugins:
-            plugins_listbox.insert(tk.END, plugin["name"])
+            display_name = f"{plugin['name']} ({plugin.get('alias', '')})"
+            plugins_listbox.insert(tk.END, display_name)
 
-def launch_plugin():
-    selected_idx = plugins_listbox.curselection()
-    if not selected_idx:
-        plugin_name = filedialog.askstring("Launch Plugin", "Enter the plugin name or alias:")
+    def launch_plugin():
+        selected_idx = plugins_listbox.curselection()
+        if not selected_idx:
+            messagebox.showerror("Error", "No plugin selected")
+            return
+
+        plugin_name = plugins_listbox.get(selected_idx).split(" (")[0]  # Extract the name
+        plugins = plugin_manager.discover_plugins()
+        selected_plugin = next((p for p in plugins if p["name"] == plugin_name or p["alias"] == plugin_name), None)
+
+        if selected_plugin:
+            module = plugin_manager.load_plugin(selected_plugin["path"], selected_plugin["main"])
+            if hasattr(module, "main"):
+                module.main(frame)  # Pass the frame as the parent
+            else:
+                messagebox.showerror("Error", "Plugin does not have a main function")
+
+    def download_plugin():
+        repo_url = "https://github.com/MaxTheSpy/SimpleToolSuite/contents/SimpleToolSuiteV1.0.1/plugins"
+        plugin_name = simpledialog.askstring("Download Plugin", "Enter the plugin name or alias:")
+
         if not plugin_name:
             return
-    else:
-        plugin_name = plugins_listbox.get(selected_idx)
 
-    plugins = plugin_manager.discover_plugins()
-    selected_plugin = next(
-        (p for p in plugins if p["name"] == plugin_name or p["alias"] == plugin_name),
-        None
-    )
+        # Resolve alias if provided
+        plugin_name = plugin_alias.get(plugin_name, plugin_name)
 
-    if selected_plugin:
-        module = plugin_manager.load_plugin(selected_plugin["path"], selected_plugin["main"])
-        if hasattr(module, "main"):
-            module.main(frame)  # Pass the frame as the parent for the plugin UI
+        success = plugin_manager.download_plugin(repo_url, plugin_name)
+        if success:
+            messagebox.showinfo("Success", f"Plugin '{plugin_name}' downloaded and installed successfully.")
+            load_plugins()  # Refresh the plugin list after download
         else:
-            messagebox.showerror("Error", "Plugin does not have a main function")
-    else:
-        messagebox.showerror("Error", f"No plugin found with name or alias '{plugin_name}'")
-
-
-
-def download_plugin():
-    repo_url = "https://api.github.com/repos/MaxTheSpy/SimpleToolSuite/contents/SimpleToolSuiteV1.0.1/plugins"  # Replace with actual repository URL
-    plugin_name = filedialog.askstring("Download Plugin", "Enter the plugin name or alias:")
-    if not plugin_name:
-        return
-
-    plugins = plugin_manager.discover_plugins()
-    matched_plugin = next(
-        (p for p in plugins if p["name"] == plugin_name or p["alias"] == plugin_name),
-        None
-    )
-
-    if matched_plugin:
-        zip_path = plugin_manager.download_plugin(repo_url, matched_plugin["name"])
-        if zip_path:
-            messagebox.showinfo("Success", f"Downloaded {matched_plugin['name']}")
-        else:
-            messagebox.showerror("Error", "Failed to download plugin")
-    else:
-        messagebox.showerror("Error", f"No plugin found with name or alias '{plugin_name}'")
-
+            messagebox.showerror("Error", f"Failed to download plugin '{plugin_name}'.")
 
 
     # Buttons
@@ -127,12 +125,10 @@ def download_plugin():
     download_button = ttk.Button(button_frame, text="Download Plugin", command=download_plugin)
     download_button.pack(side=tk.LEFT, padx=5)
 
-    # Auto-load plugins on startup
+    # Auto-load plugins at startup
     load_plugins()
 
     root.mainloop()
-
-
 
 if __name__ == "__main__":
     create_ui()
