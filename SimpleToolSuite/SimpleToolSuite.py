@@ -33,7 +33,8 @@ class PluginManager:
                             metadata = json.load(meta_file)
                             plugins.append({
                                 "name": metadata.get("name", folder),
-                                "alias": metadata.get("alias", folder),
+                                "author": metadata.get("author", "Unknown"),  # Fetch the author field
+                                "alias": metadata.get("alias", "N/A"),  # Optional if alias is needed elsewhere
                                 "path": plugin_path,
                                 "main": metadata.get("main", "main.py"),
                                 "version": metadata.get("version", "N/A"),
@@ -42,6 +43,7 @@ class PluginManager:
                         except json.JSONDecodeError:
                             print(f"Invalid metadata.json in {folder}")
         return plugins
+
 
     def load_plugin(self, plugin_path, main_file):
         """Load a plugin by importing its main module."""
@@ -116,7 +118,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             plugin = self.available_plugins.get(plugin_name, {})
             metadata_text = (
                 f"Name: {plugin.get('name', 'Unknown')}\n"
-                f"Alias: {plugin.get('alias', 'N/A')}\n"
+                f"Author: {plugin.get('author', 'Unknown')}\n"
                 f"Version: {plugin.get('version', 'N/A')}\n"
                 f"Description: {plugin.get('description', 'No description available.')}\n"
             )
@@ -126,11 +128,12 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
             metadata_text = "Plugin not found." if not selected_plugin else (
                 f"Name: {selected_plugin['name']}\n"
-                f"Alias: {selected_plugin['alias']}\n"
-                f"Version: {selected_plugin['version']}\n"
-                f"Description: {selected_plugin['description']}\n"
+                f"Author: {selected_plugin.get('author', 'Unknown')}\n"
+                f"Version: {selected_plugin.get('version', 'N/A')}\n"
+                f"Description: {selected_plugin.get('description', 'No description available.')}\n"
             )
         self.metadata_box.setText(metadata_text)
+
 
     def handle_download_button(self):
         """Handle the click event for the download button."""
