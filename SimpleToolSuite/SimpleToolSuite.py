@@ -1,13 +1,13 @@
+from PyQt5 import QtWidgets, uic
 import os
-import importlib.util
-import tkinter as tk
-from tkinter import ttk, messagebox
-from packaging import version
 import json
-import requests
+import importlib.util
+import warnings
 
-# Application version
-VERSION = "1.0.2"
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+VERSION = "1.0.3"
+
 
 class PluginManager:
     def __init__(self, plugin_dir="plugins"):
@@ -47,197 +47,124 @@ class PluginManager:
             return module
         return None
 
-def download_plugin_window(plugin_manager):
-    """Open a new window for plugin download."""
-    download_window = tk.Toplevel()
-    download_window.title("Download Plugins")
-    download_window.geometry("500x400")
 
-    # Frame for plugin list and description
-    plugins_frame = ttk.Frame(download_window)
-    plugins_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+class SimpleToolSuite(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        # Load the main UI
+        uic.loadUi('pyqt_simpletoolsuite_1.ui', self)
 
-    plugins_label = ttk.Label(plugins_frame, text="Available Plugins:")
-    plugins_label.pack(anchor="w", pady=5)
+        # Access widgets
+        self.tab_widget = self.findChild(QtWidgets.QTabWidget, "tabWidget")
+        self.plugin_list = self.findChild(QtWidgets.QListWidget, "listWidget")
+        self.metadata_box = self.findChild(QtWidgets.QTextEdit, "textEdit")
+        self.load_button = self.findChild(QtWidgets.QPushButton, "button_load_plugin")
+        self.launch_button = self.findChild(QtWidgets.QPushButton, "button_launch_plugin")
 
-    plugins_listbox = tk.Listbox(plugins_frame, height=10, width=40)
-    plugins_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        # Initialize PluginManager
+        self.plugin_manager = PluginManager(plugin_dir="plugins")
 
-    scrollbar = ttk.Scrollbar(plugins_frame, orient=tk.VERTICAL, command=plugins_listbox.yview)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    plugins_listbox.config(yscrollcommand=scrollbar.set)
+        # Setup UI
+        self.setup_ui()
 
-    description_label = ttk.Label(download_window, text="Description:")
-    description_label.pack(anchor="w", padx=10, pady=5)
+    def setup_ui(self):
+        """Initial UI setup."""
+        self.populate_plugins()
+        self.tab_widget.setTabText(0, "Plugin List")  # Set Tab 1 name
+        self.tab_widget.setTabVisible(1, False)  # Hide Tab 2 initially
 
-    description_text = tk.Text(download_window, wrap=tk.WORD, height=5, state=tk.DISABLED)
-    description_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # Connect buttons
+        self.load_button.clicked.connect(self.populate_plugins)
+        self.launch_button.clicked.connect(self.launch_plugin)
+        self.plugin_list.itemClicked.connect(self.show_metadata)  # Connect item click to show_metadata
 
-    def fetch_plugins():
-        """Fetch available plugins from GitHub and populate the list."""
-        repo_url = "https://api.github.com/repos/MaxTheSpy/SimpleToolSuite/contents/SimpleToolSuite/plugins"
-        try:
-            response = requests.get(repo_url)
-            if response.status_code == 200:
-                plugins = response.json()
-                plugins_listbox.delete(0, tk.END)
-                for plugin in plugins:
-                    if plugin["type"] == "dir":
-                        plugins_listbox.insert(tk.END, plugin["name"].replace("_", " "))
-            else:
-                messagebox.showerror("Error", f"Failed to fetch plugin list. Status: {response.status_code}")
-        except requests.RequestException as e:
-            messagebox.showerror("Error", f"Error connecting to GitHub: {e}")
-
-    def show_description(event):
-        """Show the description of the selected plugin."""
-        selected_idx = plugins_listbox.curselection()
-        if not selected_idx:
-            description_text.config(state=tk.NORMAL)
-            description_text.delete("1.0", tk.END)
-            description_text.insert(tk.END, "No plugin selected.")
-            description_text.config(state=tk.DISABLED)
-            return
-
-        plugin_name = plugins_listbox.get(selected_idx).replace(" ", "")
-        metadata_url = f"https://raw.githubusercontent.com/MaxTheSpy/SimpleToolSuite/main/SimpleToolSuite/plugins/{plugin_name}/metadata.json"
-        try:
-            response = requests.get(metadata_url)
-            if response.status_code == 200:
-                metadata = response.json()
-                description = (
-                    f"Name: {metadata.get('name', 'Unknown')}\n"
-                    f"Alias: {metadata.get('alias', 'N/A')}\n"
-                    f"Version: {metadata.get('version', 'N/A')}\n"
-                    f"Required Version: {metadata.get('required_version', 'N/A')}\n"
-                    f"Description: {metadata.get('description', 'No description provided.')}\n"
-                )
-            else:
-                description = "Failed to fetch metadata."
-        except requests.RequestException as e:
-            description = f"Error fetching metadata: {e}"
-
-        description_text.config(state=tk.NORMAL)
-        description_text.delete("1.0", tk.END)
-        description_text.insert(tk.END, description)
-        description_text.config(state=tk.DISABLED)
-
-    def download_selected_plugin():
-        """Download the selected plugin and check version compatibility."""
-        selected_idx = plugins_listbox.curselection()
-        if not selected_idx:
-            messagebox.showerror("Error", "No plugin selected.")
-            return
-
-        plugin_name = plugins_listbox.get(selected_idx).replace(" ", "")
-        metadata_url = f"https://raw.githubusercontent.com/MaxTheSpy/SimpleToolSuite/main/SimpleToolSuite/plugins/{plugin_name}/metadata.json"
-
-        try:
-            response = requests.get(metadata_url)
-            if response.status_code != 200:
-                raise Exception(f"Failed to fetch metadata for plugin '{plugin_name}'.")
-
-            metadata = response.json()
-            required_version = metadata.get("required_version", "0.0.0")
-            if version.parse(VERSION) < version.parse(required_version):
-                messagebox.showerror(
-                    "Version Mismatch",
-                    f"Plugin '{plugin_name}' requires SimpleToolSuite v{required_version} or later.\n"
-                    f"You are running v{VERSION}. Please update your application."
-                )
-                return
-
-            download_plugin_files(plugin_name)
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {e}")
-
-    def download_plugin_files(plugin_name):
-        """Download all files for the plugin."""
-        plugin_url = f"https://api.github.com/repos/MaxTheSpy/SimpleToolSuite/contents/SimpleToolSuite/plugins/{plugin_name}"
-        response = requests.get(plugin_url)
-        if response.status_code != 200:
-            messagebox.showerror("Error", f"Failed to fetch plugin: {plugin_name}")
-            return
-
-        plugin_files = response.json()
-        plugin_dir = os.path.join(plugin_manager.plugin_dir, plugin_name)
-        os.makedirs(plugin_dir, exist_ok=True)
-
-        for file in plugin_files:
-            if file['type'] == 'file':
-                file_url = file['download_url']
-                file_path = os.path.join(plugin_dir, file['name'])
-                file_response = requests.get(file_url)
-                if file_response.status_code == 200:
-                    with open(file_path, 'wb') as f:
-                        f.write(file_response.content)
-                else:
-                    print(f"Failed to download {file['name']}.")
-
-        messagebox.showinfo("Success", f"Plugin '{plugin_name}' downloaded successfully.")
-        fetch_plugins()
-
-    plugins_listbox.bind("<<ListboxSelect>>", show_description)
-
-        # Buttons for Refresh List and Download Selected
-    buttons_frame = ttk.Frame(download_window)
-    buttons_frame.pack(fill=tk.X, pady=10)
-
-    ttk.Button(buttons_frame, text="Refresh List", command=fetch_plugins).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Download Selected", command=download_selected_plugin).pack(side=tk.LEFT, padx=5)
-
-    fetch_plugins()
-
-def create_ui():
-    """Create the main UI for the application."""
-    root = tk.Tk()
-    root.title(f"Simple Tool Suite v{VERSION}")
-
-    plugin_manager = PluginManager()
-
-    frame = ttk.Frame(root)
-    frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-    plugins_listbox = tk.Listbox(frame, height=10, width=50)
-    plugins_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-    scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=plugins_listbox.yview)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    plugins_listbox.config(yscrollcommand=scrollbar.set)
-
-    def load_plugins():
-        plugins = plugin_manager.discover_plugins()
-        plugins_listbox.delete(0, tk.END)
+    def populate_plugins(self):
+        """Populate the plugin list."""
+        plugins = self.plugin_manager.discover_plugins()
+        self.plugin_list.clear()
         for plugin in plugins:
-            display_name = f"{plugin['name']} ({plugin.get('alias', '')})"
-            plugins_listbox.insert(tk.END, display_name)
+            self.plugin_list.addItem(plugin["name"])
 
-    def launch_plugin():
-        selected_idx = plugins_listbox.curselection()
-        if not selected_idx:
-            messagebox.showerror("Error", "No plugin selected.")
-            return
-
-        plugin_name = plugins_listbox.get(selected_idx).split(" (")[0]
-        plugins = plugin_manager.discover_plugins()
+    def show_metadata(self, item):
+        """Display metadata for the selected plugin."""
+        plugin_name = item.text()
+        plugins = self.plugin_manager.discover_plugins()
         selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
 
         if selected_plugin:
-            module = plugin_manager.load_plugin(selected_plugin["path"], selected_plugin["main"])
-            if hasattr(module, "main"):
-                module.main(frame)
+            metadata_path = os.path.join(selected_plugin["path"], "metadata.json")
+            if os.path.exists(metadata_path):
+                try:
+                    with open(metadata_path, "r") as meta_file:
+                        metadata = json.load(meta_file)
+                        metadata_text = (
+                            f"Name: {metadata.get('name', 'Unknown')}\n"
+                            f"Alias: {metadata.get('alias', 'N/A')}\n"
+                            f"Version: {metadata.get('version', 'N/A')}\n"
+                            f"Main File: {metadata.get('main', 'N/A')}\n"
+                            f"Description: {metadata.get('description', 'No description available.')}\n"
+                        )
+                        self.metadata_box.setText(metadata_text)
+                except json.JSONDecodeError:
+                    self.metadata_box.setText(f"Error reading metadata for {plugin_name}.")
             else:
-                messagebox.showerror("Error", "Plugin does not have a main function.")
+                self.metadata_box.setText("Metadata file not found.")
+        else:
+            self.metadata_box.setText("Plugin not found.")
 
-    button_frame = ttk.Frame(root)
-    button_frame.pack(fill=tk.X, pady=10)
+    def launch_plugin(self):
+        """Launch the selected plugin."""
+        selected_item = self.plugin_list.currentItem()
+        if not selected_item:
+            self.metadata_box.setText("No plugin selected.")
+            return
 
-    ttk.Button(button_frame, text="Load Plugins", command=load_plugins).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Launch Plugin", command=launch_plugin).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Download Plugin", command=lambda: download_plugin_window(plugin_manager)).pack(side=tk.LEFT, padx=5)
+        plugin_name = selected_item.text()
+        plugins = self.plugin_manager.discover_plugins()
+        selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
 
-    load_plugins()
-    root.mainloop()
+        if not selected_plugin:
+            self.metadata_box.setText("Plugin not found.")
+            return
+
+        # Access the QScrollArea and its widget
+        scroll_area = self.findChild(QtWidgets.QScrollArea, "scroll_plugin_container")
+        if not scroll_area:
+            self.metadata_box.setText("Scroll area not found.")
+            return
+
+        scroll_area_widget = scroll_area.findChild(QtWidgets.QWidget, "scrollAreaWidgetContents")
+        if not scroll_area_widget:
+            self.metadata_box.setText("Scroll area contents not found.")
+            return
+
+        # Clear the existing layout in the scroll area
+        if scroll_area_widget.layout() is None:
+            scroll_area_widget.setLayout(QtWidgets.QVBoxLayout())
+        else:
+            for i in reversed(range(scroll_area_widget.layout().count())):
+                widget_to_remove = scroll_area_widget.layout().itemAt(i).widget()
+                scroll_area_widget.layout().removeWidget(widget_to_remove)
+                widget_to_remove.deleteLater()
+
+        # Load and run the plugin
+        try:
+            print(f"[DEBUG] Loading plugin: {plugin_name}")  # Debug log
+            module = self.plugin_manager.load_plugin(selected_plugin["path"], selected_plugin["main"])
+            if hasattr(module, "main"):
+                module.main(scroll_area_widget)  # Pass the widget inside the scroll area
+                self.tab_widget.setTabText(1, plugin_name)  # Rename Tab 2
+                self.tab_widget.setTabVisible(1, True)  # Show Tab 2
+                self.tab_widget.setCurrentIndex(1)  # Switch to Tab 2
+            else:
+                self.metadata_box.setText("Plugin does not have a main function.")
+        except Exception as e:
+            print(f"[ERROR] Failed to load plugin: {e}")  # Debug log
+            self.metadata_box.setText(f"Failed to load plugin: {e}")
+
 
 if __name__ == "__main__":
-    create_ui()
+    app = QtWidgets.QApplication([])
+    window = SimpleToolSuite()
+    window.show()
+    app.exec_()
