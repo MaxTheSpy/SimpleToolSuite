@@ -268,6 +268,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             # Hide Tab 2
             self.tab_widget.setTabVisible(1, False)
 
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
     window = SimpleToolSuite()
