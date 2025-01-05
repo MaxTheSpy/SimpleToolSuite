@@ -36,6 +36,8 @@ class PluginManager:
                                 "alias": metadata.get("alias", folder),
                                 "path": plugin_path,
                                 "main": metadata.get("main", "main.py"),
+                                "version": metadata.get("version", "N/A"),
+                                "description": metadata.get("description", "No description available."),
                             })
                         except json.JSONDecodeError:
                             print(f"Invalid metadata.json in {folder}")
@@ -79,7 +81,10 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         """Initial UI setup."""
         self.populate_plugins()
         self.tab_widget.setTabText(0, "Plugin List")  # Set Tab 1 name
-        self.tab_widget.setTabVisible(1, False)  # Hide Tab 2 initially
+        self.tab_widget.setTabsClosable(True)  # Enable closable tabs
+        self.tab_widget.tabCloseRequested.connect(self.close_tab)  # Connect tab close signal
+        self.tab_widget.tabBar().setTabButton(0, QtWidgets.QTabBar.RightSide, None)  # Disable close button for Tab 0
+        self.tab_widget.setTabVisible(1, False)  # Ensure Tab 2 is hidden on app launch
 
         # Set default text for the download button
         self.download_button.setText("Available Plugins")
@@ -122,8 +127,8 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             metadata_text = "Plugin not found." if not selected_plugin else (
                 f"Name: {selected_plugin['name']}\n"
                 f"Alias: {selected_plugin['alias']}\n"
-                f"Version: {selected_plugin.get('version', 'N/A')}\n"
-                f"Description: {selected_plugin.get('description', 'No description available.')}\n"
+                f"Version: {selected_plugin['version']}\n"
+                f"Description: {selected_plugin['description']}\n"
             )
         self.metadata_box.setText(metadata_text)
 
@@ -211,17 +216,57 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         try:
             module = self.plugin_manager.load_plugin(selected_plugin["path"], selected_plugin["main"])
             if hasattr(module, "main"):
+                # Clear Tab 2 content completely
                 scroll_area = self.findChild(QtWidgets.QScrollArea, "scroll_plugin_container")
                 if scroll_area:
                     scroll_area_widget = scroll_area.findChild(QtWidgets.QWidget, "scrollAreaWidgetContents")
-                    module.main(scroll_area_widget)
-                    self.tab_widget.setTabText(1, plugin_name)
-                    self.tab_widget.setTabVisible(1, True)
-                    self.tab_widget.setCurrentIndex(1)
+                    if scroll_area_widget:
+                        # Remove and recreate the scroll area widget
+                        layout = scroll_area_widget.layout()
+                        if layout:
+                            self.clear_layout(layout)  # Clear existing layout
+
+                        # Recreate the widget and reset the layout
+                        new_scroll_area_widget = QtWidgets.QWidget(scroll_area)
+                        new_scroll_area_widget.setObjectName("scrollAreaWidgetContents")
+                        new_scroll_area_widget.setLayout(QtWidgets.QVBoxLayout())
+                        scroll_area.setWidget(new_scroll_area_widget)
+
+                        # Load and launch the plugin
+                        module.main(new_scroll_area_widget)
+
+                        # Update Tab 2 properties and show it
+                        self.tab_widget.setTabText(1, plugin_name)
+                        self.tab_widget.setTabVisible(1, True)
+                        self.tab_widget.setCurrentIndex(1)
             else:
                 self.metadata_box.setText("Plugin does not have a main function.")
         except Exception as e:
             self.metadata_box.setText(f"Failed to load plugin: {e}")
+
+    def clear_layout(self, layout):
+        """Recursively clear all items in a layout."""
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+            elif child.layout():
+                self.clear_layout(child.layout())
+
+    def close_tab(self, index):
+        """Hide Tab 2 and clear its content."""
+        if index != 0:  # Prevent closing the main Plugin List tab
+            scroll_area = self.findChild(QtWidgets.QScrollArea, "scroll_plugin_container")
+            if scroll_area:
+                scroll_area_widget = scroll_area.findChild(QtWidgets.QWidget, "scrollAreaWidgetContents")
+                if scroll_area_widget:
+                    # Clear all widgets inside the scroll area
+                    layout = scroll_area_widget.layout()
+                    if layout:
+                        self.clear_layout(layout)
+
+            # Hide Tab 2
+            self.tab_widget.setTabVisible(1, False)
 
 
 if __name__ == "__main__":
