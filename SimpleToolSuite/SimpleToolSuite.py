@@ -1,12 +1,16 @@
-from PyQt5 import QtWidgets, uic
-import os
-import json
-import importlib.util
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+import requests
+from PyQt5 import QtWidgets, uic
+import os
+import json
+import importlib.util
+
+
 VERSION = "1.0.3"
+GITHUB_API_URL = "https://api.github.com/repos/MaxTheSpy/SimpleToolSuite/contents/Available%20Plugins"
 
 
 class PluginManager:
@@ -60,9 +64,13 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.metadata_box = self.findChild(QtWidgets.QTextEdit, "textEdit")
         self.load_button = self.findChild(QtWidgets.QPushButton, "button_load_plugin")
         self.launch_button = self.findChild(QtWidgets.QPushButton, "button_launch_plugin")
+        self.download_button = self.findChild(QtWidgets.QPushButton, "button_download_plugin")
 
         # Initialize PluginManager
         self.plugin_manager = PluginManager(plugin_dir="plugins")
+
+        # Flags
+        self.download_mode = False
 
         # Setup UI
         self.setup_ui()
@@ -73,44 +81,118 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.tab_widget.setTabText(0, "Plugin List")  # Set Tab 1 name
         self.tab_widget.setTabVisible(1, False)  # Hide Tab 2 initially
 
+        # Set default text for the download button
+        self.download_button.setText("Available Plugins")
+
         # Connect buttons
-        self.load_button.clicked.connect(self.populate_plugins)
+        self.load_button.clicked.connect(self.reset_plugin_list)
         self.launch_button.clicked.connect(self.launch_plugin)
-        self.plugin_list.itemClicked.connect(self.show_metadata)  # Connect item click to show_metadata
+        self.download_button.clicked.connect(self.handle_download_button)
+        self.plugin_list.itemClicked.connect(self.show_metadata)
 
     def populate_plugins(self):
-        """Populate the plugin list."""
+        """Populate the plugin list with installed plugins."""
         plugins = self.plugin_manager.discover_plugins()
         self.plugin_list.clear()
         for plugin in plugins:
             self.plugin_list.addItem(plugin["name"])
 
-    def show_metadata(self, item):
-        """Display metadata for the selected plugin."""
-        plugin_name = item.text()
-        plugins = self.plugin_manager.discover_plugins()
-        selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
+    def reset_plugin_list(self):
+        """Reset the plugin list and download button."""
+        self.download_mode = False
+        self.download_button.setText("Download Plugin")
+        self.populate_plugins()
 
-        if selected_plugin:
-            metadata_path = os.path.join(selected_plugin["path"], "metadata.json")
-            if os.path.exists(metadata_path):
-                try:
-                    with open(metadata_path, "r") as meta_file:
-                        metadata = json.load(meta_file)
-                        metadata_text = (
-                            f"Name: {metadata.get('name', 'Unknown')}\n"
-                            f"Alias: {metadata.get('alias', 'N/A')}\n"
-                            f"Version: {metadata.get('version', 'N/A')}\n"
-                            f"Main File: {metadata.get('main', 'N/A')}\n"
-                            f"Description: {metadata.get('description', 'No description available.')}\n"
-                        )
-                        self.metadata_box.setText(metadata_text)
-                except json.JSONDecodeError:
-                    self.metadata_box.setText(f"Error reading metadata for {plugin_name}.")
-            else:
-                self.metadata_box.setText("Metadata file not found.")
+    def show_metadata(self, item):
+        """Display metadata for the selected plugin or available plugin."""
+        plugin_name = item.text()
+        if self.download_mode:
+            # Fetch metadata for available plugins
+            plugin = self.available_plugins.get(plugin_name, {})
+            metadata_text = (
+                f"Name: {plugin.get('name', 'Unknown')}\n"
+                f"Alias: {plugin.get('alias', 'N/A')}\n"
+                f"Version: {plugin.get('version', 'N/A')}\n"
+                f"Description: {plugin.get('description', 'No description available.')}\n"
+            )
         else:
-            self.metadata_box.setText("Plugin not found.")
+            # Fetch metadata for installed plugins
+            plugins = self.plugin_manager.discover_plugins()
+            selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
+            metadata_text = "Plugin not found." if not selected_plugin else (
+                f"Name: {selected_plugin['name']}\n"
+                f"Alias: {selected_plugin['alias']}\n"
+                f"Version: {selected_plugin.get('version', 'N/A')}\n"
+                f"Description: {selected_plugin.get('description', 'No description available.')}\n"
+            )
+        self.metadata_box.setText(metadata_text)
+
+    def handle_download_button(self):
+        """Handle the click event for the download button."""
+        if not self.download_mode:
+            self.enter_download_mode()
+        else:
+            self.download_selected_plugin()
+
+    def enter_download_mode(self):
+        """Switch to download mode and fetch available plugins."""
+        self.download_mode = True
+        self.download_button.setText("Download Selected")
+        self.fetch_available_plugins()
+
+    def fetch_available_plugins(self):
+        """Fetch the list of available plugins from the GitHub repository."""
+        try:
+            response = requests.get(GITHUB_API_URL)
+            if response.status_code == 200:
+                available_entries = response.json()
+                self.available_plugins = {}
+
+                for entry in available_entries:
+                    if entry["type"] == "dir":
+                        plugin_name = entry["name"]
+                        metadata_url = f"https://raw.githubusercontent.com/MaxTheSpy/SimpleToolSuite/main/Available%20Plugins/{plugin_name}/metadata.json"
+                        metadata_response = requests.get(metadata_url)
+                        if metadata_response.status_code == 200:
+                            metadata = json.loads(metadata_response.text)
+                            self.available_plugins[plugin_name] = metadata
+
+                self.plugin_list.clear()
+                for plugin_name in self.available_plugins.keys():
+                    self.plugin_list.addItem(plugin_name)
+            else:
+                self.metadata_box.setText(f"Failed to fetch plugins: {response.status_code}")
+        except Exception as e:
+            self.metadata_box.setText(f"Error fetching plugins: {e}")
+
+    def download_selected_plugin(self):
+        """Download and install the selected plugin."""
+        selected_item = self.plugin_list.currentItem()
+        if not selected_item:
+            self.metadata_box.setText("No plugin selected.")
+            return
+
+        plugin_name = selected_item.text()
+        plugin_url = f"{GITHUB_API_URL}/{plugin_name}"
+        try:
+            response = requests.get(plugin_url)
+            if response.status_code == 200:
+                plugin_dir = os.path.join(self.plugin_manager.plugin_dir, plugin_name)
+                os.makedirs(plugin_dir, exist_ok=True)
+                for entry in response.json():
+                    if entry["type"] == "file":
+                        file_url = entry["download_url"]
+                        file_response = requests.get(file_url)
+                        if file_response.status_code == 200:
+                            file_path = os.path.join(plugin_dir, entry["name"])
+                            with open(file_path, "wb") as file:
+                                file.write(file_response.content)
+                self.metadata_box.setText(f"Plugin '{plugin_name}' installed successfully.")
+                self.reset_plugin_list()
+            else:
+                self.metadata_box.setText(f"Failed to download plugin: {response.status_code}")
+        except Exception as e:
+            self.metadata_box.setText(f"Error downloading plugin: {e}")
 
     def launch_plugin(self):
         """Launch the selected plugin."""
@@ -122,44 +204,23 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         plugin_name = selected_item.text()
         plugins = self.plugin_manager.discover_plugins()
         selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
-
         if not selected_plugin:
             self.metadata_box.setText("Plugin not found.")
             return
 
-        # Access the QScrollArea and its widget
-        scroll_area = self.findChild(QtWidgets.QScrollArea, "scroll_plugin_container")
-        if not scroll_area:
-            self.metadata_box.setText("Scroll area not found.")
-            return
-
-        scroll_area_widget = scroll_area.findChild(QtWidgets.QWidget, "scrollAreaWidgetContents")
-        if not scroll_area_widget:
-            self.metadata_box.setText("Scroll area contents not found.")
-            return
-
-        # Clear the existing layout in the scroll area
-        if scroll_area_widget.layout() is None:
-            scroll_area_widget.setLayout(QtWidgets.QVBoxLayout())
-        else:
-            for i in reversed(range(scroll_area_widget.layout().count())):
-                widget_to_remove = scroll_area_widget.layout().itemAt(i).widget()
-                scroll_area_widget.layout().removeWidget(widget_to_remove)
-                widget_to_remove.deleteLater()
-
-        # Load and run the plugin
         try:
-            print(f"[DEBUG] Loading plugin: {plugin_name}")  # Debug log
             module = self.plugin_manager.load_plugin(selected_plugin["path"], selected_plugin["main"])
             if hasattr(module, "main"):
-                module.main(scroll_area_widget)  # Pass the widget inside the scroll area
-                self.tab_widget.setTabText(1, plugin_name)  # Rename Tab 2
-                self.tab_widget.setTabVisible(1, True)  # Show Tab 2
-                self.tab_widget.setCurrentIndex(1)  # Switch to Tab 2
+                scroll_area = self.findChild(QtWidgets.QScrollArea, "scroll_plugin_container")
+                if scroll_area:
+                    scroll_area_widget = scroll_area.findChild(QtWidgets.QWidget, "scrollAreaWidgetContents")
+                    module.main(scroll_area_widget)
+                    self.tab_widget.setTabText(1, plugin_name)
+                    self.tab_widget.setTabVisible(1, True)
+                    self.tab_widget.setCurrentIndex(1)
             else:
                 self.metadata_box.setText("Plugin does not have a main function.")
         except Exception as e:
-            print(f"[ERROR] Failed to load plugin: {e}")  # Debug log
             self.metadata_box.setText(f"Failed to load plugin: {e}")
 
 
