@@ -1,7 +1,7 @@
 {
   "name": "Illegal Character Replacement",
   "alias": "ICRT",
-  "version": "1.2",
+  "version": "1.3",
   "author": "MaxTheSpy",
   "description": "Tool to analyze and replace illegal characters in file and folder names.",
   "main": "IllegalCharacterReplacement.py",
