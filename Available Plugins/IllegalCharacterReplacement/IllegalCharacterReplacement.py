@@ -1,16 +1,21 @@
 import os
 from PyQt5 import QtWidgets, uic
 
-
 class IllegalCharacterReplacementTool(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Force resolution to the SimpleToolSuite directory
+        # Correct path to UI file
         script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
         plugin_dir = os.path.join(script_dir, "plugins", "IllegalCharacterReplacement")
         ui_path = os.path.join(plugin_dir, "icrt_ui.ui")
         uic.loadUi(ui_path, self)
+
+        # Make sure the checkbox exists with the correct name
+        try:
+            self.checkBox_Trailing_Period.stateChanged.connect(self.handle_trailing_period_checkbox)
+        except AttributeError as e:
+            print("AttributeError:", e)
 
         # Set default values
         self.lineEdit_ill_char.setText('<>:"/\\|?*')
@@ -19,6 +24,7 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
         # Connect UI elements to logic
         self.pushButton_select_2.clicked.connect(self.select_directory)
         self.pushButton_analyze_2.clicked.connect(self.analyze_directory)
+        self.checkBox_Trailing_Period.stateChanged.connect(self.handle_trailing_period_checkbox)
 
         # Set up the table widget
         self.tableView_results_2.setColumnCount(4)
@@ -35,6 +41,7 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
 
         # Initialize file list
         self.files_with_issues = []
+        self.files_with_trailing_periods = []  # Track files with trailing periods
 
     def select_directory(self):
         """Open a dialog to select a directory."""
@@ -58,8 +65,12 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
         # Find files and directories with illegal characters
         self.files_with_issues = self.find_files_with_issues(directory, illegal_chars)
 
+        # Find files and directories with trailing periods if the checkbox is checked
+        if self.checkBox_Trailing_Period.isChecked():
+            self.files_with_trailing_periods = self.find_files_with_trailing_periods(directory)
+
         # Populate the table with results
-        self.populate_results_table(illegal_chars)
+        self.populate_results_table(illegal_chars, self.files_with_trailing_periods if self.checkBox_Trailing_Period.isChecked() else self.files_with_issues)
 
     def find_files_with_issues(self, directory, illegal_chars):
         """Find all files and directories with illegal characters."""
@@ -70,18 +81,27 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
                     files_with_issues.append((root, name))
         return files_with_issues
 
-    def populate_results_table(self, illegal_chars):
-        """Populate the results table with files and folders containing illegal characters."""
+    def find_files_with_trailing_periods(self, directory):
+        """Find files and directories with trailing periods."""
+        files_with_trailing_periods = []
+        for root, dirs, files in os.walk(directory):
+            for name in dirs + files:
+                if name.endswith('.'):
+                    files_with_trailing_periods.append((root, name))
+        return files_with_trailing_periods
+
+    def populate_results_table(self, illegal_chars, files_list):
+        """Populate the results table with files and folders containing illegal characters or trailing periods."""
         # Clear the table
         self.tableView_results_2.setRowCount(0)
 
         # Populate rows
-        for root, name in self.files_with_issues:
+        for root, name in files_list:
             # Extract just the file/folder name
             file_name = name
 
-            # Find the first illegal character
-            target_character = next((char for char in name if char in illegal_chars), "")
+            # Find the first illegal character or indicate trailing period
+            target_character = next((char for char in name if char in illegal_chars), "Trailing Period" if name.endswith('.') else "")
 
             # Add a new row
             row_position = self.tableView_results_2.rowCount()
@@ -107,13 +127,11 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
     def confirm_or_replace(self, root, name, button, override_field):
         """Handle the Replace button click."""
         if button.text() == "Replace":
-            # First click: Change the button text to "Sure?"
             button.setText("Sure?")
         elif button.text() == "Sure?":
-            # Second click: Perform the rename and reset the button
             self.replace_illegal_characters(root, name, override_field)
             button.setText("Done")
-            button.setEnabled(False)  # Disable the button after renaming
+            button.setEnabled(False)
 
     def replace_illegal_characters(self, root, name, override_field):
         """Replace illegal characters in a specific file or folder."""
@@ -121,15 +139,26 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
         replacement = self.lineEdit_rep_char.text().strip()
         override = override_field.text().strip()
 
+        # Validation for illegal characters and replacement character length
         if not illegal_chars or len(replacement) > 1:
             QtWidgets.QMessageBox.warning(self, "Error", "Invalid replacement settings.")
             return
 
-        # Use override if specified, otherwise use the default replacement
-        replacement_char = override if override else replacement
+        if self.checkBox_Trailing_Period.isChecked():
+            # Handle trailing periods
+            if name.endswith('.'):
+                # Use override if specified, otherwise remove trailing period
+                replacement_char = override if override else ''
+                new_name = name.rstrip('.') + replacement_char
+            else:
+                # If not ending with a period, use the same illegal char logic
+                new_name = self.sanitize_data(name, illegal_chars, replacement)
+        else:
+            # Use default logic for illegal characters
+            replacement_char = override if override else replacement
+            new_name = self.sanitize_data(name, illegal_chars, replacement_char)
 
         old_path = os.path.join(root, name)
-        new_name = self.sanitize_data(name, illegal_chars, replacement_char)
         new_path = os.path.join(root, new_name)
 
         try:
@@ -139,12 +168,16 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error", f"Failed to rename:\n\n{old_path}\n\nError: {e}")
 
+    # Utility method for replacing illegal characters
     def sanitize_data(self, value, illegal_chars, replacement):
         """Sanitize a string by replacing illegal characters."""
         for char in illegal_chars:
             value = value.replace(char, replacement)
         return value
 
+    def handle_trailing_period_checkbox(self):
+        """Toggle the action based on the Trailing Period checkbox."""
+        self.analyze_directory()
 
 def main(parent=None):
     """Main entry point for the plugin."""
@@ -152,7 +185,6 @@ def main(parent=None):
     if parent is None:
         widget.show()
     return widget
-
 
 if __name__ == "__main__":
     import sys
