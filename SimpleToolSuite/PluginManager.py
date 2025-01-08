@@ -1,97 +1,76 @@
-from PyQt5 import QtWidgets, uic
-from pluginmanager import PluginManager  # Import your PluginManager class
+import os
+import json
+import requests
 
-class SimpleToolSuite(QtWidgets.QMainWindow):
-    def __init__(self):
-        super().__init__()
-        uic.loadUi('pyqt_simpletoolsuite_1.ui', self)
+class PluginManager:
+    def __init__(self, plugin_dir):
+        self.plugin_dir = plugin_dir
 
-        # Access widgets
-        self.plugin_list = self.findChild(QtWidgets.QListWidget, "listWidget")
-        self.metadata_box = self.findChild(QtWidgets.QTextEdit, "textEdit")
-        self.load_button = self.findChild(QtWidgets.QPushButton, "button_load_plugin")
-        self.launch_button = self.findChild(QtWidgets.QPushButton, "button_launch_plugin")
-        self.download_button = self.findChild(QtWidgets.QPushButton, "button_download_plugin")
+    def discover_plugins(self):
+        """Discover available plugins within the designated plugin directory."""
+        plugins = []
+        if not os.path.exists(self.plugin_dir):
+            os.makedirs(self.plugin_dir)
 
-        # Initialize PluginManager
-        self.plugin_manager = PluginManager(plugin_dir="plugins")
+        for folder in os.listdir(self.plugin_dir):
+            plugin_path = os.path.join(self.plugin_dir, folder)
+            if os.path.isdir(plugin_path):
+                metadata_path = os.path.join(plugin_path, "metadata.json")
+                if os.path.exists(metadata_path):
+                    try:
+                        with open(metadata_path, "r") as meta_file:
+                            metadata = json.load(meta_file)
+                            plugins.append({
+                                "name": metadata.get("name", folder),
+                                "author": metadata.get("author", "Unknown"),
+                                "path": plugin_path,
+                                "main": metadata.get("main", "main.py"),
+                                "version": metadata.get("version", "N/A"),
+                                "description": metadata.get("description", "No description available."),
+                            })
+                    except json.JSONDecodeError:
+                        print(f"Invalid JSON in metadata.json for {folder}")
+        return plugins
 
-        # Populate plugins and set up connections
-        self.populate_plugins()
-        self.plugin_list.itemClicked.connect(self.show_metadata)
-        self.load_button.clicked.connect(self.load_plugins)
-        self.launch_button.clicked.connect(self.launch_plugin)
-        self.download_button.clicked.connect(self.download_plugin)
+    def load_plugin(self, plugin_path, main_file):
+        """Dynamically load a plugin from the specified path and main file."""
+        try:
+            main_module = os.path.splitext(main_file)[0]
+            module_path = os.path.join(plugin_path, main_file)
 
-    def populate_plugins(self):
-        """Populate the plugin list."""
-        plugins = self.plugin_manager.discover_plugins()
-        self.plugin_list.clear()
-        for plugin in plugins:
-            self.plugin_list.addItem(plugin["name"])
-
-    def show_metadata(self, item):
-        """Display metadata for the selected plugin."""
-        plugin_name = item.text()
-        plugins = self.plugin_manager.discover_plugins()
-        selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
-        if selected_plugin:
-            metadata_path = os.path.join(selected_plugin["path"], "metadata.json")
-            if os.path.exists(metadata_path):
-                with open(metadata_path, "r") as meta_file:
-                    metadata = json.load(meta_file)
-                    metadata_text = (
-                        f"Name: {metadata.get('name', 'Unknown')}\n"
-                        f"Alias: {metadata.get('alias', 'N/A')}\n"
-                        f"Version: {metadata.get('version', 'N/A')}\n"
-                        f"Main File: {metadata.get('main', 'N/A')}\n"
-                        f"Description: {metadata.get('description', 'No description available.')}\n"
-                    )
-                    self.metadata_box.setText(metadata_text)
+            # Import module only if main file exists
+            if os.path.exists(module_path):
+                import importlib.util
+                spec = importlib.util.spec_from_file_location(main_module, module_path)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                return module
             else:
-                self.metadata_box.setText("Metadata file not found.")
-        else:
-            self.metadata_box.setText("Plugin not found.")
+                print(f"Main file not found for plugin at {plugin_path}")
+        except Exception as e:
+            print(f"Failed to load plugin from {plugin_path}: {e}")
+        return None
 
-    def load_plugins(self):
-        """Refresh the plugin list."""
-        self.populate_plugins()
-
-    def launch_plugin(self):
-        """Launch the selected plugin."""
-        selected_item = self.plugin_list.currentItem()
-        if not selected_item:
-            self.metadata_box.setText("No plugin selected.")
-            return
-
-        plugin_name = selected_item.text()
-        plugins = self.plugin_manager.discover_plugins()
-        selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
-
-        if selected_plugin:
-            module = self.plugin_manager.load_plugin(selected_plugin["path"], selected_plugin["main"])
-            if hasattr(module, "main"):
-                # Load the plugin's UI or functionality
-                module.main()
+    def download_plugin(self, repo_url, plugin_name):
+        """Download a plugin from a given repository URL."""
+        plugin_url = f"{repo_url}/{plugin_name}"
+        try:
+            response = requests.get(plugin_url)
+            if response.status_code == 200:
+                plugin_dir = os.path.join(self.plugin_dir, plugin_name)
+                os.makedirs(plugin_dir, exist_ok=True)
+                for entry in response.json():
+                    if entry["type"] == "file":
+                        file_url = entry["download_url"]
+                        file_response = requests.get(file_url)
+                        if file_response.status_code == 200:
+                            file_path = os.path.join(plugin_dir, entry["name"])
+                            with open(file_path, "wb") as file:
+                                file.write(file_response.content)
+                print(f"Plugin '{plugin_name}' downloaded successfully.")
+                return True
             else:
-                self.metadata_box.setText("Plugin does not have a main function.")
-        else:
-            self.metadata_box.setText("Plugin not found.")
-
-    def download_plugin(self):
-        """Download a plugin from the repository."""
-        # Prompt the user for the plugin name
-        plugin_name, ok = QtWidgets.QInputDialog.getText(self, "Download Plugin", "Enter the plugin name:")
-        if not ok or not plugin_name.strip():
-            return  # User canceled or entered an invalid name
-
-        # Repository URL
-        repo_url = "https://api.github.com/repos/MaxTheSpy/SimpleToolSuite/contents/SimpleToolSuite/plugins"
-
-        # Download the plugin
-        success = self.plugin_manager.download_plugin(repo_url, plugin_name.strip())
-        if success:
-            QtWidgets.QMessageBox.information(self, "Success", f"Plugin '{plugin_name}' downloaded successfully.")
-            self.populate_plugins()  # Refresh the plugin list
-        else:
-            QtWidgets.QMessageBox.critical(self, "Error", f"Failed to download plugin '{plugin_name}'.")
+                print(f"Failed to download plugin: {response.status_code}")
+        except Exception as e:
+            print(f"Error downloading plugin '{plugin_name}': {e}")
+        return False
