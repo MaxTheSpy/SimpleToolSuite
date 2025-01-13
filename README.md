@@ -1,3 +1,5 @@
+You can Chat, get support, suggest new features and more by joining the community ([Discord Server](discord.gg/DYs69z6WtJ))! 
+
 Simple Tool Suite or STS is a simple plugin based app launcher for simple apps or scripts.
 
 # App List:
