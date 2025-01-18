@@ -1,36 +1,58 @@
 QWidget {
-    background-color: #f5f5f5;
-    color: #000000;
+    background-color: #f5f5f5; /* Light base background */
+    color: #2e2e2e; /* Dark text for contrast */
 }
 
 QPushButton {
-    background-color: #e0e0e0;
-    border: 1px solid #999999;
+    background-color: #5ca8d3; /* Light blue background for buttons */
+    border: 1px solid #3c8bb0; /* Slightly darker border */
     padding: 5px;
-    min-height: 25px;
-    min-width: 120px;
+    color: #ffffff; /* White text */
+    min-height: 18px;
+    min-width: 75px;
+    border-radius: 8px; /* Rounded corners for a modern look */
 }
 
 QPushButton:hover {
-    background-color: #d5d5d5;
+    background-color: #d44239; /* Slightly darker hover effect */
+    border: 1px solid #d44239; /* Change border color on hover */
 }
 
 QListWidget {
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
+    background-color: #ffffff; /* White background for lists */
+    border: 1px solid #dcdcdc; /* Subtle border for separation */
+    color: #2e2e2e; /* Black text for readability */
+    border-radius: 10px; /* Rounded corners */
+    padding: 4px; /* Optional: Adds spacing inside the border */
 }
 
 QLineEdit {
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
+    background-color: #ffffff; /* Neutral light background */
+    border: 1px solid #3c8bb0; /* Matches the button border color */
     padding: 5px;
-    color: #000000;
+    color: #2e2e2e; /* Dark text */
+    border-radius: 4px;
 }
 
 QCheckBox {
-    color: #000000;
+    color: #2e2e2e; /* Dark text for light background */
 }
 
 QLabel {
-    color: #000000;
+    color: #2e2e2e; /* Dark text for light background */
+}
+
+QScrollBar:vertical {
+    background-color: #dcdcdc; /* Light background for the scrollbar */
+    width: 12px;
+    border: 1px solid #bcbcbc; /* Subtle border */
+}
+
+QScrollBar::handle:vertical {
+    background-color: #5ca8d3; /* Blue color for the scrollbar handle */
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #4c9cc0; /* Slightly darker blue on hover */
 }

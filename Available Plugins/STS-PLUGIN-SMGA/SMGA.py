@@ -440,7 +440,7 @@ def main(parent):
     """Main entry point for the plugin."""
     # Locate the UI file within the plugin directory
     plugin_dir = os.path.dirname(os.path.abspath(__file__))
-    ui_file_path = os.path.join(plugin_dir, "smga_ui.ui")
+    ui_file_path = os.path.join(plugin_dir, "SMGA.ui")
 
     print(f"[DEBUG] Looking for UI file at: {ui_file_path}")
 

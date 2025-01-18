@@ -5,6 +5,7 @@ import os
 import json
 import platform
 import requests
+import shutil
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 from PyQt5.QtWidgets import QCheckBox
 from PluginManager import PluginManager
@@ -134,7 +135,6 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.load_button.clicked.connect(self.reset_plugin_list)
         self.launch_button.clicked.connect(self.launch_plugin)
         self.download_button.clicked.connect(self.handle_download_mode)
-        self.plugin_list.itemClicked.connect(self.show_metadata)
 
 
 
@@ -243,8 +243,15 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
                 if key in metadata:
                     value = metadata[key]
                     self.description_list.addItem(f"{display_name}: {value}")  # Capitalized labels
-        else:
-            self.description_list.addItem("No metadata available or improperly formatted.")
+
+            # Display features if they exist
+            if "features" in metadata:
+                self.description_list.addItem("")  # Add an empty line for spacing
+                self.description_list.addItem("Features:")  # Features header
+                for feature in metadata["features"]:
+                    self.description_list.addItem(f"  - {feature}")  # List each feature with a bullet point
+            else:
+                self.description_list.addItem("No metadata available or improperly formatted.")
 
     def handle_launch_or_download(self):
         """Launch the selected plugin or download depending on the mode."""
@@ -311,6 +318,8 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         """Handle tab closing by clearing and hiding tab 2."""
         if index == 2:  # Check if it's the plugin execution tab
             self.clear_and_hide_tab(index)
+            self.tab_widget.setCurrentIndex(0)  # Set the active tab back to the Plugins tab
+
 
     def clear_and_hide_tab(self, index):
         """Clear tab contents and hide the tab."""
