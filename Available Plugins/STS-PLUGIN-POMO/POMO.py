@@ -17,7 +17,8 @@ class PomodoroApp(QtWidgets.QWidget):
 
         # Initialize configuration, timer, and sound system
         self.config = {}
-        self.remaining_time = 0
+        self.load_config()
+        self.remaining_time = self.config.get("pomodoro_time", 25 * 60)  # Default to Pomodoro time
         self.running = False
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_timer)
@@ -26,7 +27,8 @@ class PomodoroApp(QtWidgets.QWidget):
         self.is_playing_sound = False
 
         self.setup_ui()
-        self.load_config()
+        self.update_lcd()  # Update the LCD to show the default Pomodoro time
+
 
     def setup_ui(self):
         self.button_pomodoro.clicked.connect(self.set_pomodoro_time)
