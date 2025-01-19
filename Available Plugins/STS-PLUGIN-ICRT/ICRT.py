@@ -11,26 +11,15 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
         ui_path = os.path.join(plugin_dir, "ICRT.ui")
         uic.loadUi(ui_path, self)
 
-        # Make sure the checkbox exists with the correct name
-        try:
-            self.checkBox_Trailing_Period.stateChanged.connect(self.handle_trailing_period_checkbox)
-        except AttributeError as e:
-            print("AttributeError:", e)
-
-        # Set default values
+        self.checkBox_Trailing_Period.stateChanged.connect(self.toggle_trailing_period_state)  # Optional visual feedback
         self.lineEdit_ill_char.setText('<>:"/\\|?*')
         self.lineEdit_rep_char.setText('-')
-
-        # Connect UI elements to logic
         self.pushButton_select_2.clicked.connect(self.select_directory)
         self.pushButton_analyze_2.clicked.connect(self.analyze_directory)
-        self.checkBox_Trailing_Period.stateChanged.connect(self.handle_trailing_period_checkbox)
 
-        # Set up the table widget
         self.tableView_results_2.setColumnCount(4)
         self.tableView_results_2.setHorizontalHeaderLabels(["Name", "Target Character", "Override", "Action"])
 
-        # Configure column widths
         header = self.tableView_results_2.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)  # "Name" column adjusts freely
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)  # "Target Character" column adjusts freely
@@ -39,9 +28,8 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
         self.tableView_results_2.setColumnWidth(2, 100)  # Lock the "Override" column to 100px
         self.tableView_results_2.setColumnWidth(3, 100)  # Lock the "Action" column to 100px
 
-        # Initialize file list
         self.files_with_issues = []
-        self.files_with_trailing_periods = []  # Track files with trailing periods
+        self.files_with_trailing_periods = []
 
     def select_directory(self):
         """Open a dialog to select a directory."""
@@ -50,7 +38,7 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
             self.lineEdit_directory_2.setText(directory)
 
     def analyze_directory(self):
-        """Analyze the directory for files and folders with illegal characters."""
+        """Analyze the directory for files and folders with illegal characters and/or trailing periods."""
         directory = self.lineEdit_directory_2.text().strip()
         illegal_chars = self.lineEdit_ill_char.text().strip()
 
@@ -62,15 +50,13 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(self, "Error", "Please specify illegal characters.")
             return
 
-        # Find files and directories with illegal characters
         self.files_with_issues = self.find_files_with_issues(directory, illegal_chars)
 
-        # Find files and directories with trailing periods if the checkbox is checked
         if self.checkBox_Trailing_Period.isChecked():
             self.files_with_trailing_periods = self.find_files_with_trailing_periods(directory)
 
-        # Populate the table with results
-        self.populate_results_table(illegal_chars, self.files_with_trailing_periods if self.checkBox_Trailing_Period.isChecked() else self.files_with_issues)
+        combined_results = self.files_with_issues + self.files_with_trailing_periods
+        self.populate_results_table(illegal_chars, combined_results)
 
     def find_files_with_issues(self, directory, illegal_chars):
         """Find all files and directories with illegal characters."""
@@ -92,10 +78,8 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
 
     def populate_results_table(self, illegal_chars, files_list):
         """Populate the results table with files and folders containing illegal characters or trailing periods."""
-        # Clear the table
         self.tableView_results_2.setRowCount(0)
 
-        # Populate rows
         for root, name in files_list:
             # Extract just the file/folder name
             file_name = name
@@ -145,16 +129,12 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
             return
 
         if self.checkBox_Trailing_Period.isChecked():
-            # Handle trailing periods
             if name.endswith('.'):
-                # Use override if specified, otherwise remove trailing period
                 replacement_char = override if override else ''
                 new_name = name.rstrip('.') + replacement_char
             else:
-                # If not ending with a period, use the same illegal char logic
                 new_name = self.sanitize_data(name, illegal_chars, replacement)
         else:
-            # Use default logic for illegal characters
             replacement_char = override if override else replacement
             new_name = self.sanitize_data(name, illegal_chars, replacement_char)
 
@@ -163,21 +143,18 @@ class IllegalCharacterReplacementTool(QtWidgets.QWidget):
 
         try:
             os.rename(old_path, new_path)
-            # Refresh the list silently without pop-ups
             self.analyze_directory()  # Refresh the list
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error", f"Failed to rename:\n\n{old_path}\n\nError: {e}")
 
-    # Utility method for replacing illegal characters
     def sanitize_data(self, value, illegal_chars, replacement):
         """Sanitize a string by replacing illegal characters."""
         for char in illegal_chars:
             value = value.replace(char, replacement)
         return value
 
-    def handle_trailing_period_checkbox(self):
-        """Toggle the action based on the Trailing Period checkbox."""
-        self.analyze_directory()
+    def toggle_trailing_period_state(self):
+        pass
 
 def main(parent=None):
     """Main entry point for the plugin."""
