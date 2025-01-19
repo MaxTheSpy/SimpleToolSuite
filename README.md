@@ -17,4 +17,8 @@ Simple Tool Suite or STS is a simple plugin based app launcher for simple apps o
 
 ## Wifi File Transfer (WIFT)
 
--WIFT allows you to create your own temporary webpage on your local network that you can upload and download files to. This is helpful for transferring files from your phone to your pc, or other devices on your network.
+- WIFT allows you to create your own temporary webpage on your local network that you can upload and download files to. This is helpful for transferring files from your phone to your pc, or other devices on your network.
+
+## Pomodoro Timer (POMO)
+
+- The POMO Plugin is a simple Pomodoro Timer application designed to help users manage their time effectively. The default time selections are backed by decades of research by the Pomodoro Technique Foundation developed by Francesco Cirillo in the 1980s and has been a staple of time management since then. We understand that not everyone conforms or prefers to work on these timelines, so we gave you the ability to change your default times. An added bonus is a small task or note section that you can use to quickly outline what you want to get done before or after your POMO session.
