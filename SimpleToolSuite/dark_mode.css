@@ -4,8 +4,8 @@ QWidget {
 }
 
 QPushButton {
-    background-color: #5ca8d3; /* Light blue background for buttons */
-    border: 1px solid #3c8bb0; /* Slightly darker border */
+    background-color: #d44239; /* Light blue background for buttons */
+    border: 1px solid #d44239; /* Slightly darker border */
     padding: 5px;
     color: #ffffff; /* White text */
     min-height: 18px;
@@ -14,8 +14,8 @@ QPushButton {
 }
 
 QPushButton:hover {
-    background-color: #d44239; /* Slightly darker hover effect */
-    border: 1px solid #d44239; /* Change border color on hover */
+    background-color: #5ca8d3; /* Slightly darker hover effect */
+    border: 1px solid #5ca8d3; /* Change border color on hover */
 }
 
 QListWidget {
@@ -98,4 +98,19 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
 QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: transparent; /* Transparent background for the track area */
     border-radius: 6px; /* Rounded corners for the track */
+}
+
+
+/* Checkbox*/
+QCheckBox::indicator {
+    width: 15px; /* Adjust size as needed */
+    height: 15px;
+    border: 1px solid #ffffff; /* White border for the checkbox indicator */
+    background-color: #1e1e1e; /* Match the dark background */
+    border-radius: 3px; /* Optional: Rounded corners for the indicator */
+}
+
+QCheckBox::indicator:checked {
+    background-color: #d44239; /* Light blue for checked state */
+    border: 1px solid #ffffff; /* Optional: Match button border color */
 }

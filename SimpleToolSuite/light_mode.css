@@ -42,17 +42,75 @@ QLabel {
     color: #2e2e2e; /* Dark text for light background */
 }
 
+/* Vertical Scrollbar */
 QScrollBar:vertical {
-    background-color: #dcdcdc; /* Light background for the scrollbar */
+    background-color: #121212; /* Very dark background for the scrollbar */
     width: 12px;
-    border: 1px solid #bcbcbc; /* Subtle border */
+    border: none; /* Remove border for a cleaner look */
+    margin: 4px; /* Space around the scrollbar */
+    border-radius: 6px; /* Rounded scrollbar track */
 }
 
 QScrollBar::handle:vertical {
     background-color: #5ca8d3; /* Blue color for the scrollbar handle */
-    border-radius: 6px;
+    border-radius: 6px; /* Rounded scrollbar handle */
+    min-height: 20px; /* Minimum handle size */
 }
 
 QScrollBar::handle:vertical:hover {
-    background-color: #4c9cc0; /* Slightly darker blue on hover */
+    background-color: #4883a5; /* Darker Blue on hover */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    background: none; /* Remove default up/down arrows */
+    height: 0px; /* Hide arrow buttons */
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: transparent; /* Transparent background for the track area */
+    border-radius: 6px; /* Rounded corners for the track */
+}
+
+/* Horizontal Scrollbar */
+QScrollBar:horizontal {
+    background-color: #121212; /* Very dark background for the scrollbar */
+    height: 12px;
+    border: none; /* Remove border for a cleaner look */
+    margin: 4px; /* Space around the scrollbar */
+    border-radius: 6px; /* Rounded scrollbar track */
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #5ca8d3; /* Orange color for the scrollbar handle */
+    border-radius: 6px; /* Rounded scrollbar handle */
+    min-width: 20px; /* Minimum handle size */
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #4883a5;; /* Darker blue on hover */
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    background: none; /* Remove default left/right arrows */
+    width: 0px; /* Hide arrow buttons */
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: transparent; /* Transparent background for the track area */
+    border-radius: 6px; /* Rounded corners for the track */
+}
+
+
+/* Checkbox*/
+QCheckBox::indicator {
+    width: 15px; /* Adjust size as needed */
+    height: 15px;
+    border: 1px solid #000000; /* Black border for the checkbox indicator */
+    background-color: #f5f5f5; /* Match the light background */
+    border-radius: 3px; /* Optional: Rounded corners for the indicator */
+}
+
+QCheckBox::indicator:checked {
+    background-color: #5ca8d3; /* Light blue for checked state */
+    border: 1px solid #3c8bb0; /* Optional: Match button border color */
 }
