@@ -1,10 +1,11 @@
 #!/bin/bash
 
-echo "========= SimpleToolSuite Linux Build Script ========="
+echo "========= SimpleToolSuite macOS Build Script ========="
 
 
 echo " => Cleaning up previous builds!"
 rm -f ./dist/simpletoolsuite
+
 
 echo " => Creating and activating virtual environment..."
 python3 -m venv venv
@@ -21,7 +22,19 @@ pyinstaller --onefile \
     --add-data "src/simpletoolsuite/*.ui:simpletoolsuite" \
     --add-data "src/simpletoolsuite/*.css:simpletoolsuite" \
     --name="SimpleToolSuite" \
+    --icon="src/simpletoolsuite/simpletoolsuite.png" \
     src/portable.py
+
+
+echo " => Setting executable permissions..."
+chmod +x dist/SimpleToolSuite.app
+
+
+echo " => Creating dmg..."
+mkdir -p dist/dmg
+mv dist/SimpleToolSuite.app dist/dmg/SimpleToolSuite.app
+ln -s /Applications dist/dmg
+hdiutil create -srcfolder dist/dmg -format UDZO -o dist/SimpleToolSuite.dmg
 
 
 echo " => Cleaning up temporary files..."

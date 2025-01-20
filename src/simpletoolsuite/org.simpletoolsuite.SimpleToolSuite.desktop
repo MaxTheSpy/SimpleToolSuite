@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=SimpleToolSuite
+GenericName=tools
+Comment=A modular system with a collection of simple yet useful tools. 
+Icon=simpletoolsuite
+Exec=python3 -m simpletoolsuite
+Categories=Utility;
