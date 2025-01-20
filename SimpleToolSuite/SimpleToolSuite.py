@@ -1,7 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-import os
+import os, sys
 import json
 import platform
 import requests
@@ -31,11 +31,18 @@ def get_default_config_path():
 class SimpleToolSuite(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.config_path = get_default_config_path()
-        self.config = self.load_config()
+        self.config_path = get_default_config_path()  # Initialize config_path
+        self.config = self.load_config()  # Load config first
+        
+        # Initialize resource paths
+        self.ui_file = resource_path("pyqt_simpletoolsuite_2.ui")
+        self.light_css = resource_path("light_mode.css")
+        self.dark_css = resource_path("dark_mode.css")
 
-        uic.loadUi('pyqt_simpletoolsuite_2.ui', self)
+        # Load UI
+        uic.loadUi(self.ui_file, self)
 
+        # Now self.config is available, so we can initialize PluginManager
         self.plugin_manager = PluginManager(self.config.get('plugin_location', os.path.join(os.getcwd(), "plugins")))
 
         self.download_mode = False
@@ -44,6 +51,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.connect_signals()
         self.apply_config()
         self.setup_ui()
+
 
     def init_ui_components(self):
             """Initialize UI components."""
@@ -108,16 +116,16 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
 
     def apply_style(self, dark_mode_enabled):
         """Apply the appropriate stylesheet based on dark mode setting."""
-        style_sheet = DARK_MODE_STYLE if dark_mode_enabled else "light_mode.css"
+        style_sheet = self.dark_css if dark_mode_enabled else self.light_css
         if os.path.exists(style_sheet):
             try:
                 with open(style_sheet, "r") as file:
-                    style_content = file.read()
-                    self.setStyleSheet(style_content)
+                    self.setStyleSheet(file.read())
             except Exception as e:
                 print(f"Error applying stylesheet: {e}")
         else:
-            print(f"{style_sheet} CSS file not found.")
+            print(f"Stylesheet {style_sheet} not found.")
+
 
     def setup_ui(self):
         """Initial UI setup."""
@@ -153,20 +161,21 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.launch_button.setText("Launch Plugin")
 
     def open_plugin_location(self):
-            """Open the directory specified in the plugin location line edit."""
-            dir_ = self.line_edit_plugin_loc.text().strip()  # Get the directory path from the line edit
-            if os.path.exists(dir_):
-                QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(dir_))
-            else:
-                QtWidgets.QMessageBox.warning(self, "Invalid Directory", "The specified directory does not exist.")
+        """Open the directory specified in the plugin location line edit."""
+        dir_ = os.path.abspath(self.line_edit_plugin_loc.text().strip())  # Ensure the path is absolute
+        if os.path.exists(dir_):
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(dir_))
+        else:
+            QtWidgets.QMessageBox.warning(self, "Invalid Directory", "The specified directory does not exist.")
 
     def open_config_location(self):
-            """Open the directory where the config file is located."""
-            config_dir = os.path.dirname(self.config_path)  # Get the directory of config path
-            if os.path.exists(config_dir):
-                QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(config_dir))
-            else:
-                QtWidgets.QMessageBox.warning(self, "Directory Not Found", "The configuration directory does not exist.")
+        """Open the directory where the config file is located."""
+        config_dir = os.path.abspath(os.path.dirname(self.config_path))  # Ensure the path is absolute
+        if os.path.exists(config_dir):
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(config_dir))
+        else:
+            QtWidgets.QMessageBox.warning(self, "Directory Not Found", "The configuration directory does not exist.")
+
 
     def handle_download_mode(self):
         """Enter download mode to show available plugins."""
@@ -380,6 +389,19 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.config['dark_mode'] = enabled
         self.save_config()
         self.apply_style(enabled)
+
+
+# Function to get the correct path for bundled files
+def resource_path(relative_path):
+    """ Get the absolute path to a resource, works for dev and PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
+# Update file paths like this:
+ui_file = resource_path("pyqt_simpletoolsuite_2.ui")
+light_css = resource_path("light_mode.css")
+dark_css = resource_path("dark_mode.css")
+
 
 
 if __name__ == "__main__":
