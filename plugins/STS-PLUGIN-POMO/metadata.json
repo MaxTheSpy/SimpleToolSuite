@@ -1,0 +1,16 @@
+{
+  "name": "Pomodoro Timer",
+  "alias": "POMO",
+  "version": "0.0.1-b",
+  "author": "MaxTheSpy",
+  "description": "Generates a QR code from a given string.",
+  "main": "POMO.py",
+  "dependencies": [""],
+  "required_version": ">=1.0.3",
+  "features": [
+      "Configure your Pomodoro timer as well as short and long breaks.",
+      "Start, pause, and reset the timer.",
+      "Get a notification when the timer is up."
+  ],
+  "ui": "plugins/STS-PLUGIN-POMO/POMO.ui"
+}

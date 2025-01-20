@@ -1,0 +1,2 @@
+PyQt5>=5.15.0  # For Qt Designer-generated UI files
+requests>=2.25.0  # For downloading plugins and making HTTP requests

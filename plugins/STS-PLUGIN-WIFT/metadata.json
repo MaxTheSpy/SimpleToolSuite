@@ -1,0 +1,14 @@
+{
+  "name": "Wifi File Transfer",
+  "alias": "WIFT",
+  "version": "0.0.1-b",
+  "author": "MaxTheSpy",
+  "description": "Wifi File Transfer",
+  "main": "WIFT.py",
+  "dependencies": [""],
+  "required_version": ">=1.0.3",
+  "features": [
+      "Coming Soon"
+  ],
+  "ui": "plugins/STS-PLUGIN-WIFT/WIFT.ui"
+}
