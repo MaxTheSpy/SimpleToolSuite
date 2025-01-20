@@ -1,0 +1,212 @@
+/* General Styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(to bottom, #687888, #121212) no-repeat; /* Gradient background without repeat */
+    background-size: cover; /* Ensure gradient fills the screen */
+    color: #BAE0F3;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center align content */
+    min-height: 100vh; /* Ensure the body takes the full height of the viewport */
+}
+
+/* Header Styles */
+.header {
+    background-color: #1e1e1e;
+    padding: 15px;
+    width: 100%;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+    position: relative; /* Ensure the logo is positioned correctly */
+}
+
+.header .logo {
+    position: absolute;
+    left: 15px;
+    height: 110px; /* Adjust the height as needed */
+}
+
+.header ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 15px;
+}
+
+.header li {
+    margin: 0;
+}
+
+.header a {
+    text-decoration: none;
+    color: #1DB954;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.header a:hover {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+.header a.active {
+    background-color: #1DB954;
+    color: #121212;
+}
+
+/* Table Styles */
+table {
+    width: 100%;
+    max-width: 800px;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background-color: #1e1e1e;
+    border-radius: 16px; /* Increase border-radius */
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+
+th, td {
+    border: 1px solid #333333;
+    padding: 12px 15px;
+    text-align: left;
+    color: #ffffff;
+}
+
+th {
+    background-color: #1a1a1a;
+    color: #5CB3E7;
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+/* Buttons */
+button, label.choose-file-button {
+    display: inline-block;
+    padding: 10px 15px;
+    margin: 5px;
+    border: none; /* Remove border */
+    border-radius: 8px;
+    background-color: #F36646;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 14px;
+    text-align: center;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+button:hover, label.choose-file-button:hover {
+    background-color: #5CB3E7;
+    transform: scale(1.05); /* Slight zoom effect */
+}
+
+button:active, label.choose-file-button:active {
+    transform: scale(1); /* Reset zoom effect when clicked */
+}
+
+/* Delete Button Styles */
+.delete-button {
+    border: none; /* Remove border */
+    background-color: #ff4c4c;
+    color: #ffffff;
+    padding: 5px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.delete-button:hover {
+    background-color: #ff1a1a;
+    transform: scale(1.05); /* Slight zoom effect */
+}
+
+.delete-button:active {
+    transform: scale(1); /* Reset zoom effect when clicked */
+}
+
+/* Download Button Styles */
+.download-action-button {
+    border: 2px solid #555555;
+    border-radius: 5px;
+    padding: 5px;
+    background: none;
+    cursor: pointer;
+}
+
+.download-action-button img {
+    width: 20px;
+    height: 20px;
+}
+
+/* Form Styles */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background-color: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+
+input {
+    padding: 12px 15px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 2px solid #1e1e1e;
+    background-color: #1e1e1e;
+    color: white;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus, 
+input[type="password"]:focus, 
+input[type="number"]:focus {
+    border-color: #242C36;
+}
+
+/* Links */
+a {
+    text-decoration: none;
+    color: #F36646;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: #5CB3E7;
+}
+
+/* Mobile Responsiveness */
+@media screen and (max-width: 600px) {
+    .header {
+        flex-direction: column;
+    }
+
+    .header .logo {
+        position: static;
+        margin-bottom: 0px;
+        height: 130px; /* Increase the height for mobile */
+    }
+
+    .header ul {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .hide-on-mobile {
+        display: none; /* Hide specific elements */
+    }
+
+    table {
+        font-size: 12px; /* Smaller text for mobile */
+    }
+}

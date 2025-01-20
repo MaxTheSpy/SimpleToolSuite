@@ -4,7 +4,7 @@
   "version": "1.1",
   "author": "MaxTheSpy",
   "description": "A tool to analyze and categorize music genres from audio files.",
-  "main": "SimpleMusicGenreAnalyzer.py",
+  "main": "SMGA.py",
   "dependencies": ["mutagen", "PyQt5", "os"],
   "required_version": ">=1.0.3",
   "features": [
