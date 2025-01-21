@@ -8,7 +8,7 @@ import requests
 import shutil
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 from PyQt5.QtWidgets import QCheckBox
-from .pluginmanager import PluginManager      #TODO J Does this need .pluginmanager import PluginManager? or no .
+from .pluginmanager import PluginManager     
 
 # Constants
 VERSION = "1.0.4"
@@ -21,17 +21,25 @@ def get_default_config_path():
     home = os.path.expanduser("~")
     system = platform.system()
 
+    # Config: Base Path.
     if system == "Windows":
-        base_dir = os.path.join(home, "AppData", "Local", "SimpleToolSuite")
+        config_base_dir = os.path.join(home, "AppData", "Local", "SimpleToolSuite")
     elif system == "Darwin":  # macOS
-        base_dir = os.path.join(home, "Library", "Application Support", "SimpleToolSuite")
+        config_base_dir = os.path.join(home, "Library", "Application Support", "SimpleToolSuite")
     else:  # Assuming Linux and other UNIX-like systems
-        base_dir = os.path.join(home, ".config", "SimpleToolSuite")
+        config_base_dir = os.path.join(home, ".config", "SimpleToolSuite")
 
-    config_path = os.path.join(base_dir, "config.json")
-    plugin_dir = os.path.join(base_dir, "Plugins")
+    #plugin: Base Path.
+    if system == "Windows":
+            plugin_base_dir = os.path.join(home, "AppData", "Local", "SimpleToolSuite", "Plugins")
+    elif system == "Darwin":  # macOS
+        plugin_base_dir = os.path.join(home, "Library", "Application Support", "SimpleToolSuite", "Plugins")
+    else:  # Assuming Linux and other UNIX-like systems
+        plugin_base_dir = os.path.join(home, ".local", "share", "SimpleToolSuite", "Plugins")
 
-    return config_path, plugin_dir
+    config_path = os.path.join(config_base_dir, "config.json")
+    return config_path, plugin_base_dir
+
 
 class SimpleToolSuite(QtWidgets.QMainWindow):
     def __init__(self):
