@@ -8,7 +8,7 @@ import requests
 import shutil
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 from PyQt5.QtWidgets import QCheckBox
-from .pluginmanager import PluginManager
+from .pluginmanager import PluginManager      #TODO J Does this need .pluginmanager import PluginManager? or no .
 
 # Constants
 VERSION = "1.0.4"
@@ -17,16 +17,21 @@ DARK_MODE_STYLE = "dark_mode.css"
 GITHUB_API_URL = "https://api.github.com/repos/MaxTheSpy/SimpleToolSuite/contents/Available%20Plugins"
 
 def get_default_config_path():
-    """Determine the default configuration file path based on the operating system."""
+    """Determine the default configuration and plugin directory paths based on the operating system."""
     home = os.path.expanduser("~")
     system = platform.system()
 
     if system == "Windows":
-        return os.path.join(home, "AppData", "Local", "SimpleToolSuite", DEFAULT_CONFIG_NAME)
+        base_dir = os.path.join(home, "AppData", "Local", "SimpleToolSuite")
     elif system == "Darwin":  # macOS
-        return os.path.join(home, "Library", "Application Support", "SimpleToolSuite", DEFAULT_CONFIG_NAME)
+        base_dir = os.path.join(home, "Library", "Application Support", "SimpleToolSuite")
     else:  # Assuming Linux and other UNIX-like systems
-        return os.path.join(home, ".config", "SimpleToolSuite", DEFAULT_CONFIG_NAME)
+        base_dir = os.path.join(home, ".config", "SimpleToolSuite")
+
+    config_path = os.path.join(base_dir, "config.json")
+    plugin_dir = os.path.join(base_dir, "Plugins")
+
+    return config_path, plugin_dir
 
 class SimpleToolSuite(QtWidgets.QMainWindow):
     def __init__(self):
@@ -79,14 +84,16 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
 
     def load_config(self):
         """Load the configuration from a file, creating defaults if necessary."""
+        self.config_path, default_plugin_dir = get_default_config_path()
         config_dir = os.path.dirname(self.config_path)
+
         if not os.path.exists(config_dir):
             os.makedirs(config_dir)
 
         if not os.path.exists(self.config_path):
             default_config = {
                 "dark_mode": False,
-                "plugin_location": os.path.join(os.getcwd(), "plugins")
+                "plugin_location": default_plugin_dir  # Use the default plugin directory
             }
             with open(self.config_path, 'w') as f:
                 json.dump(default_config, f, indent=4)
