@@ -8,7 +8,7 @@ import requests
 import shutil
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 from PyQt5.QtWidgets import QCheckBox
-from .pluginmanager import PluginManager     
+from .pluginmanager import PluginManager
 
 # Constants
 VERSION = "1.0.4"
@@ -46,7 +46,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         super().__init__()
         self.config_path = get_default_config_path()  # Initialize config_path
         self.config = self.load_config()  # Load config first
-        self.app_root = os.path.dirname(os.path.realpath(__file__))
+        self.app_root = getattr(sys, '_MEIPASS', os.path.dirname(os.path.realpath(__file__)))
         
         # Load UI
         uic.loadUi(os.path.join(self.app_root, "main.ui"), self)
@@ -365,13 +365,27 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
     def save_config_and_plugins(self):
         """Save configuration and relocate plugins if necessary."""
         new_plugin_location = self.line_edit_plugin_loc.text().strip()
-        if new_plugin_location and os.path.exists(new_plugin_location):
-            self.move_plugins(new_plugin_location)
-            self.plugin_manager.plugin_dir = new_plugin_location
 
-        self.config['plugin_location'] = new_plugin_location
-        self.save_config()
-        self.populate_plugins()
+        # Check if the new directory exists, create it if necessary
+        if new_plugin_location:
+            if not os.path.exists(new_plugin_location):
+                os.makedirs(new_plugin_location)
+            
+            # Move plugins to the new location
+            self.move_plugins(new_plugin_location)
+            
+            # Update the PluginManager to use the new directory
+            self.plugin_manager.plugin_dir = new_plugin_location
+            
+            # Update the configuration
+            self.config['plugin_location'] = new_plugin_location
+            self.save_config()
+            
+            # Repopulate the plugin list from the new location
+            self.populate_plugins()
+        else:
+            QtWidgets.QMessageBox.warning(self, "Invalid Directory", "Please specify a valid plugin directory.")
+
 
     def move_plugins(self, new_plugin_location):
         """Move plugins to a new directory location."""

@@ -33,23 +33,24 @@ class PluginManager:
         return plugins
 
     def load_plugin(self, plugin_path, main_file):
-        """Dynamically load a plugin from the specified path and main file."""
         try:
             main_module = os.path.splitext(main_file)[0]
             module_path = os.path.join(plugin_path, main_file)
+            print(f"Attempting to load module: {module_path}")
 
-            # Import module only if main file exists
             if os.path.exists(module_path):
                 import importlib.util
                 spec = importlib.util.spec_from_file_location(main_module, module_path)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
+                print(f"Module loaded: {module}")
                 return module
             else:
-                print(f"Main file not found for plugin at {plugin_path}")
+                print(f"Main file not found at: {module_path}")
         except Exception as e:
-            print(f"Failed to load plugin from {plugin_path}: {e}")
+            print(f"Failed to load plugin: {e}")
         return None
+
 
     def download_plugin(self, repo_url, plugin_name):
         """Download a plugin from a given repository URL."""

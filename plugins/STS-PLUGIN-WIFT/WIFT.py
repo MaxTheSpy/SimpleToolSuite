@@ -57,15 +57,39 @@ class WIFTPlugin(QtWidgets.QWidget):
             self.file_table = self.findChild(QtWidgets.QTableWidget, "file_table")
             self.start_server_button.clicked.connect(self.toggle_server)
             self.open_site_button.clicked.connect(self.open_website)
+
+            # Set up the table
             self.file_table.setColumnCount(3)
             self.file_table.setHorizontalHeaderLabels(["Filename", "Type", "Actions"])
-            self.file_table.setColumnWidth(2, 200)          # Resize action column
+
+            # Set up the table
+            self.file_table.setColumnCount(3)
+            self.file_table.setHorizontalHeaderLabels(["Filename", "Type", "Actions"])
+
+            # Configure column resize modes
+            self.file_table.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)  # Filename expands
+            self.file_table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)  # Type adjusts to content
+            self.file_table.horizontalHeader().setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)  # Actions adjusts to content
+
+            # Enforce minimum widths using the horizontal header
+            self.file_table.horizontalHeader().setMinimumSectionSize(75)  # Set a global minimum for all columns (optional)
+            self.file_table.horizontalHeader().resizeSection(1, 100)  # Type column minimum width
+            self.file_table.horizontalHeader().resizeSection(2, 200)  # Actions column minimum width
+
+
+            # Disable last section stretching to avoid conflicts
+            self.file_table.horizontalHeader().setStretchLastSection(False)
+
+
+            # Update the status
             self.update_status("Stopped", "red")
             self.update_file_table()
 
         except Exception as e:
             QMessageBox.critical(self, "UI Setup Error", f"Error setting up the UI: {str(e)}")
             raise
+
+
 
     def configure_routes(self):
         @self.app.route('/')
@@ -172,7 +196,11 @@ class WIFTPlugin(QtWidgets.QWidget):
 
     def cleanup_temp_files(self):
         for filename in os.listdir(self.temp_dir):
-            os.remove(os.path.join(self.temp_dir, filename))
+            try:
+                os.remove(os.path.join(self.temp_dir, filename))
+            except OSError as e:
+                print(f"Error deleting file {filename}: {e}")
+
 
     def update_status(self, status, color):
         self.label_status.setText(status)

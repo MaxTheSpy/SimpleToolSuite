@@ -92,6 +92,9 @@
          </item>
          <item>
           <widget class="QTableWidget" name="file_table">
+           <attribute name="horizontalHeaderStretchLastSection">
+            <bool>false</bool>
+           </attribute>
            <column>
             <property name="text">
              <string>File Name</string>
