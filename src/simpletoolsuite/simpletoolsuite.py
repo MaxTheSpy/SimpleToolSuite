@@ -301,6 +301,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             self.description_list.addItem("Plugin not found.")
             return
 
+        # Load and activate the plugin's virtual environment and module
         module = self.plugin_manager.load_plugin(selected_plugin["path"], selected_plugin["main"])
         if module and hasattr(module, "main"):
             scroll_area = self.findChild(QtWidgets.QScrollArea, "scroll_plugin_container")

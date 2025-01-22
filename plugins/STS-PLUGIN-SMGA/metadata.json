@@ -14,5 +14,5 @@
     "Calculates genre distribution and overlap percentage.",
     "Interactive UI with results displayed in a sortable table."
   ],
-  "ui": "plugins/SimpleMusicGenreAnalyzer/smga_ui.ui"
+  "ui": "plugins/SimpleMusicGenreAnalyzer/SMGA.ui"
 }

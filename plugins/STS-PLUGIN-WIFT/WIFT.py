@@ -62,9 +62,6 @@ class WIFTPlugin(QtWidgets.QWidget):
             self.file_table.setColumnCount(3)
             self.file_table.setHorizontalHeaderLabels(["Filename", "Type", "Actions"])
 
-            # Set up the table
-            self.file_table.setColumnCount(3)
-            self.file_table.setHorizontalHeaderLabels(["Filename", "Type", "Actions"])
 
             # Configure column resize modes
             self.file_table.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)  # Filename expands
@@ -76,20 +73,13 @@ class WIFTPlugin(QtWidgets.QWidget):
             self.file_table.horizontalHeader().resizeSection(1, 100)  # Type column minimum width
             self.file_table.horizontalHeader().resizeSection(2, 200)  # Actions column minimum width
 
-
-            # Disable last section stretching to avoid conflicts
             self.file_table.horizontalHeader().setStretchLastSection(False)
-
-
-            # Update the status
             self.update_status("Stopped", "red")
             self.update_file_table()
 
         except Exception as e:
             QMessageBox.critical(self, "UI Setup Error", f"Error setting up the UI: {str(e)}")
             raise
-
-
 
     def configure_routes(self):
         @self.app.route('/')
