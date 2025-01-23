@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import sys
 
 class PluginManager:
     def __init__(self, plugin_dir):
@@ -33,23 +34,59 @@ class PluginManager:
         return plugins
 
     def load_plugin(self, plugin_path, main_file):
-        """Dynamically load a plugin from the specified path and main file."""
+        """Load the main module of a plugin."""
         try:
+            # Activate the plugin's virtual environment before loading
+            self.load_plugin_dependencies(plugin_path)
+
             main_module = os.path.splitext(main_file)[0]
             module_path = os.path.join(plugin_path, main_file)
+            print(f"Attempting to load module: {module_path}")
 
-            # Import module only if main file exists
             if os.path.exists(module_path):
                 import importlib.util
                 spec = importlib.util.spec_from_file_location(main_module, module_path)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
+                print(f"Module loaded: {module}")
                 return module
             else:
-                print(f"Main file not found for plugin at {plugin_path}")
+                print(f"Main file not found at: {module_path}")
         except Exception as e:
-            print(f"Failed to load plugin from {plugin_path}: {e}")
+            print(f"Failed to load plugin: {e}")
         return None
+
+    def load_plugin_dependencies(self, plugin_path):
+        """
+        Activates the virtual environment for the specified plugin and ensures its site-packages is added to sys.path.
+        """
+        venv_path = os.path.join(plugin_path, ".venv", "bin", "activate_this.py")
+        venv_lib_site_packages = os.path.join(plugin_path, ".venv", "lib", "python3.12", "site-packages")
+        venv_lib64_site_packages = os.path.join(plugin_path, ".venv", "lib64", "python3.12", "site-packages")
+
+        if os.path.exists(venv_path):
+            try:
+                print(f"Activating virtual environment: {venv_path}")
+                exec(open(venv_path).read(), {'__file__': venv_path})
+                print(f"Virtual environment activated for plugin: {plugin_path}")
+
+                # Add lib/site-packages to sys.path if it exists and is not already present
+                if os.path.exists(venv_lib_site_packages) and venv_lib_site_packages not in sys.path:
+                    print(f"Adding lib site-packages to sys.path: {venv_lib_site_packages}")
+                    sys.path.insert(0, venv_lib_site_packages)
+
+                # Add lib64/site-packages to sys.path if it exists and is not already present
+                if os.path.exists(venv_lib64_site_packages) and venv_lib64_site_packages not in sys.path:
+                    print(f"Adding lib64 site-packages to sys.path: {venv_lib64_site_packages}")
+                    sys.path.insert(0, venv_lib64_site_packages)
+
+            except Exception as e:
+                print(f"Failed to activate virtual environment for plugin: {plugin_path}. Error: {e}")
+        else:
+            print(f"Virtual environment not found at: {venv_path}")
+
+
+
 
     def download_plugin(self, repo_url, plugin_name):
         """Download a plugin from a given repository URL."""

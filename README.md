@@ -1,24 +1,32 @@
-Simple Tool Suite or STS is a simple plugin based app launcher for simple apps or scripts.
+<div align="center">
 
-# App List:
+  <p align="center">
+    <img src="https://github.com/MaxTheSpy/SimpleToolSuite/blob/main/src/simpletoolsuite/simpletoolsuite.png" alt="STS Logo" width="200">
+  </p>
 
-## Simple Music Genre Analyzer (SMGA)
+![Issues](https://img.shields.io/github/issues/MaxTheSpy/simpleToolSuite)
+![Stars](https://img.shields.io/github/stars/MaxTheSpy/SimpleToolSuite)
+![Downloads](https://img.shields.io/github/downloads/MaxTheSpy/SimpleToolSuite/total)
+![License](https://img.shields.io/github/license/MaxTheSpy/SimpleToolSuite)
 
-- A simple program where you feed it your music library and it will tell you a percentage based distrobution of your genres. Using simple mode combines like genres into parent genre. For example: Pop Rock would fall under Pop, same with California Pop. The default complex mode will show you all the sub genres. In many cases there is some overlap and this app will tel you how many songs fall under multiple categories.
-  
-## Illegal Character Replacement (ICRT)
+[Join Discord](https://discord.gg/DYs69z6WtJ) · [Report Bug](https://github.com/MaxTheSpy/SimpleToolSuite/issues/new)
 
-- Allows the user to scan a directory for illegal characters, default illegal characters are "<>:"/\|?*" the default replacement character is "-" but it can be selected line by line if you want it different for a specific file.
-- For example a song called "l*ve" by default will change to "l-ve" which does not make sense, the ovveride allows you to enter an o in there so it corrects to "love".
+</div>
 
-## QR Code Generator (QRCG)
+# SimpleToolSuite
 
-- Create QR codes and embed whatever data you want! The sky is the limit! Embed phone numbers, contact cards, web addresses, wifi network information and more. Select between various QR code sizes, and error correction levels.
+Welcome to SimpleToolsuite, an app built to be lightweight and customizable with simple purpose built plugins. SimpleToolSuite allows you to focus on what matters by providing the tools you want—nothing more, nothing less.
 
-## Wifi File Transfer (WIFT)
+## Whats the big idea?
 
-- WIFT allows you to create your own temporary webpage on your local network that you can upload and download files to. This is helpful for transferring files from your phone to your pc, or other devices on your network.
+SimpleToolSuite is designed with a modular approach in mind. Nearly everything is built using plugins which means YOU are in control! Install as few or as many plugins as you want that integrate into your workflow.
 
-## Pomodoro Timer (POMO)
+## How It Works
 
-- The POMO Plugin is a simple Pomodoro Timer application designed to help users manage their time effectively. The default time selections are backed by decades of research by the Pomodoro Technique Foundation developed by Francesco Cirillo in the 1980s and has been a staple of time management since then. We understand that not everyone conforms or prefers to work on these timelines, so we gave you the ability to change your default times. An added bonus is a small task or note section that you can use to quickly outline what you want to get done before or after your POMO session.
+1. **Download The Core App:** Start with SimpleToolSuite. This is the foundation, with no plugins included.
+2. **Explore Plugins:** Browse for plugins in-app(coming soon) or check out the [Plugin Page on our GitHub Wiki!](https://github.com/MaxTheSpy/SimpleToolSuite/wiki/Available-Plugins)
+3. **Install All Or None:** install as many or as few plugins as you need! We've left the customization up to your personal preferences.
+
+## Why SimpleToolSuite?
+
+Many apps try to do far too much, getting endlessly patched and updated as time goes on. While this is great, it often leads to clutter. SimpleToolSuite flips that on its head by letting you build exactly what you need, one tool at a time. No unnessessary features, no distractions. Just a clean Simple Tool Suite that works.
