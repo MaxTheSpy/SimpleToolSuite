@@ -1,1 +1,0 @@
-# STS-PLUGIN-ICRT
