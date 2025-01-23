@@ -1,7 +1,7 @@
 <div align="center">
 
   <p align="center">
-    <img src="https://github.com/MaxTheSpy/SimpleToolSuite/blob/main/src/simpletoolsuite/simpletoolsuite.png" alt="STS Logo" width="400">
+    <img src="https://github.com/MaxTheSpy/SimpleToolSuite/blob/main/src/simpletoolsuite/simpletoolsuite.png" alt="STS Logo" width="200">
   </p>
 
 ![Issues](https://img.shields.io/github/issues/MaxTheSpy/simpleToolSuite)
