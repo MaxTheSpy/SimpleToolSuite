@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QCheckBox
 from .pluginmanager import PluginManager
 
 # Constants
-VERSION = "1.0.4"
+VERSION = "1.0.8"
 DEFAULT_CONFIG_NAME = "config.json"
 DARK_MODE_STYLE = "dark_mode.css"
 GITHUB_API_URL = "https://api.github.com/repos/MaxTheSpy/SimpleToolSuite/contents/Available%20Plugins"
@@ -47,15 +47,13 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.config_path = get_default_config_path()  # Initialize config_path
         self.config = self.load_config()  # Load config first
         self.app_root = getattr(sys, '_MEIPASS', os.path.dirname(os.path.realpath(__file__)))
-        
-        # Load UI
         uic.loadUi(os.path.join(self.app_root, "main.ui"), self)
 
-        # Now self.config is available, so we can initialize PluginManager
+        # Set the window title with version number
+        self.setWindowTitle(f"SimpleToolSuite v{VERSION}")
+
         self.plugin_manager = PluginManager(self.config.get('plugin_location', os.path.join(os.getcwd(), "plugins")))
-
         self.download_mode = False
-
         self.init_ui_components()
         self.connect_signals()
         self.apply_config()
@@ -141,7 +139,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.tab_widget.setTabText(1, "Settings")  # Ensure Tab 2 name is set
         self.tab_widget.setTabsClosable(True)
 
-        # Hide close buttons on desired tabs (plugins and settings)
+        # Hide close buttons on plugin and settings page.
         self.tab_widget.tabBar().setTabButton(0, QtWidgets.QTabBar.RightSide, None)
         self.tab_widget.tabBar().setTabButton(1, QtWidgets.QTabBar.RightSide, None)
         self.tab_widget.setCurrentIndex(0) #Set Plugins Tab as the active tab on startup.
