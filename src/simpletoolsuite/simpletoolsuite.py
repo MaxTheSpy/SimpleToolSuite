@@ -323,7 +323,9 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
                 scroll_area_widget.setLayout(QtWidgets.QVBoxLayout())
                 scroll_area.setWidget(scroll_area_widget)
 
-                widget = module.main(scroll_area_widget)
+                # Pass the logger to the plugin's main function
+                widget = module.main(parent_widget=scroll_area_widget, parent_logger=self.plugin_logger)
+
                 if isinstance(widget, QtWidgets.QWidget):
                     scroll_area_widget.layout().addWidget(widget)
 
@@ -333,6 +335,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         else:
             self.sts_logger.error(f"'{plugin_name}' Failed To Launch. No 'main' function found.")
             self.description_list.addItem("Plugin does not have a main function.")
+
 
     def handle_tab_close(self, index):
         """Handle tab closing by clearing and hiding tab 2."""
