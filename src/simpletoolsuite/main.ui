@@ -30,7 +30,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab_plugins">
        <attribute name="title">
@@ -320,6 +320,63 @@
              </layout>
             </widget>
            </item>
+           <item>
+            <widget class="QWidget" name="widget_20" native="true">
+             <layout class="QHBoxLayout" name="horizontalLayout_18">
+              <item>
+               <widget class="QWidget" name="widget_9" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_19">
+                 <item>
+                  <widget class="QLabel" name="label_log_loc">
+                   <property name="minimumSize">
+                    <size>
+                     <width>120</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Open Logs:</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="widget_21" native="true">
+                <layout class="QHBoxLayout" name="horizontalLayout_20">
+                 <item>
+                  <widget class="QPushButton" name="button_open_logs">
+                   <property name="text">
+                    <string>Open</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -398,7 +455,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>444</width>
+             <width>744</width>
              <height>559</height>
             </rect>
            </property>
