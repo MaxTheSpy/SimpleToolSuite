@@ -6,8 +6,10 @@ import json
 import platform
 import sys
 import shutil
+import zipfile
+import subprocess
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
-from PyQt5.QtWidgets import QCheckBox
+from PyQt5.QtWidgets import QCheckBox, QFileDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QDialog
 from .pluginmanager import PluginManager
 from .sts_logging import setup_logging, initialize_loggers
 
@@ -31,13 +33,13 @@ def get_default_config_path():
     else:                         # Linux/Unix 
         config_base_dir = os.path.join(home, ".config", "SimpleToolSuite")
 
-    # Plugin location
-    if system == "Windows":       # Windows
-        plugin_base_dir = os.path.join(config_base_dir, "Plugins")
-    elif system == "Darwin":      # MacOS
-        plugin_base_dir = os.path.join(config_base_dir, "Plugins")
-    else:                         # Linux/Unix
-        plugin_base_dir = os.path.join(config_base_dir, "Plugins")
+    #plugin: Base Path.
+    if system == "Windows":
+            plugin_base_dir = os.path.join(home, "AppData", "Local", "SimpleToolSuite", "Plugins")
+    elif system == "Darwin":  # macOS
+        plugin_base_dir = os.path.join(home, "Library", "Application Support", "SimpleToolSuite", "Plugins")
+    else:  # Assuming Linux and other UNIX-like systems
+        plugin_base_dir = os.path.join(home, ".local", "share", "SimpleToolSuite", "Plugins")
 
     # Log location
     if system == "Windows":       # Windows
@@ -57,7 +59,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         super().__init__()
         self.config_path, self.plugin_dir, self.log_dir = get_default_config_path()
         self.config = self.load_config()
-        
+
         """Setup logging"""
         unified_logger = setup_logging(self.log_dir)
         self.sts_logger, self.plugin_logger = initialize_loggers(unified_logger)
@@ -90,7 +92,10 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.label_plugin_mode = self.findChild(QtWidgets.QLabel, "label_plugin_mode")
         self.button_open_config = self.findChild(QtWidgets.QPushButton, "button_open_config")
         self.button_open_logs = self.findChild(QtWidgets.QPushButton, "button_open_logs")
+        self.button_install_zip = self.findChild(QtWidgets.QPushButton, "button_install_zip")
+        
         self.tab_widget.setTabsClosable(True)
+
 
     def connect_signals(self):
         try:
@@ -107,6 +112,151 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.checkbox_darkmode.stateChanged.connect(self.toggle_dark_mode)
         self.button_open_config.clicked.connect(self.open_config_location)
         self.button_open_logs.clicked.connect(self.open_logs_folder)
+        self.button_install_zip.clicked.connect(self.open_install_zip_dialog)
+
+#TODO: This works from the command prompt but not from the appimage.
+    def open_install_zip_dialog(self):
+        self.sts_logger.info("Install From Zip dialog opened.")
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Install Plugin from Zip")
+
+        layout = QVBoxLayout()
+
+        label = QLabel("Select a Zip File:")
+        layout.addWidget(label)
+
+        line_edit = QLineEdit()
+        layout.addWidget(line_edit)
+
+        browse_button = QPushButton("Browse")
+        browse_button.clicked.connect(lambda: self.browse_zip_file(line_edit))
+        layout.addWidget(browse_button)
+
+        install_button = QPushButton("Install")
+        install_button.clicked.connect(lambda: self.install_plugin_from_zip(line_edit.text()))
+        layout.addWidget(install_button)
+
+        self.progress_output = QTextEdit()
+        self.progress_output.setReadOnly(True)
+        layout.addWidget(self.progress_output)
+
+        dialog.setLayout(layout)
+        dialog.setModal(False)  # Make the dialog non-blocking
+        dialog.show()  # Use show() instead of exec_()
+        self.dialog = dialog  # Keep a reference to the dialog to prevent garbage collection
+
+    def browse_zip_file(self, line_edit):
+        self.sts_logger.info("Browsing for zip file.")
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Zip File", "", "Zip Files (*.zip)")
+        if file_path:
+            line_edit.setText(file_path)
+
+
+#TODO: from here:
+    def install_plugin_from_zip(self, zip_path):
+        if not zip_path or not zipfile.is_zipfile(zip_path):
+            self.sts_logger.error("Invalid zip file selected.")
+            self.progress_output.append("Invalid zip file selected.")
+            return
+
+        plugin_dir = self.plugin_dir  # Default plugin directory
+        temp_dir = os.path.join(os.path.expanduser("~"), ".simpletoolsuite", "temp_install")
+
+        venv_dir = None  # Ensure venv_dir is defined even if requirements.txt is missing
+
+        try:
+            # Unzip the contents
+            self.sts_logger.info("Extracting zip file...")
+            self.progress_output.append("Extracting zip file...")
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+            self.progress_output.append("Zip file extracted.")
+
+            # Check the extracted structure
+            extracted_contents = os.listdir(temp_dir)
+            if len(extracted_contents) != 1 or not os.path.isdir(os.path.join(temp_dir, extracted_contents[0])):
+                raise ValueError("Unexpected ZIP structure. Expected a single top-level directory.")
+
+            extracted_dir = os.path.join(temp_dir, extracted_contents[0])
+            requirements_file = os.path.join(extracted_dir, "requirements.txt")
+
+            # Create virtual environments
+            venv_dir = os.path.join(extracted_dir, ".venv")
+            if not os.path.exists(venv_dir):
+                self.sts_logger.info("Creating virtual environment...")
+                self.progress_output.append("Creating virtual environment...")
+                try:
+                    # Dynamically resolve the Python executable from the AppImage's APPDIR environment
+                    appdir = os.environ.get("APPDIR", "/tmp/.mount_SimpleToolSuite")
+                    python_executable = shutil.which("python3") or os.path.join(appdir, "opt/python3.12/bin/python3.12")
+
+                    
+                    if not os.path.exists(python_executable):
+                        raise RuntimeError(f"Python executable not found at: {python_executable}")
+
+                    self.sts_logger.debug(f"Using Python executable: {python_executable}")
+
+                    # Create the virtual environment
+                    subprocess.check_call([python_executable, "-m", "venv", venv_dir])
+                    self.progress_output.append("Virtual environment created.")
+
+                    # Ensure pip is installed and upgraded
+                    python_venv_executable = os.path.join(venv_dir, "bin", "python")
+                    subprocess.check_call([python_venv_executable, "-m", "ensurepip", "--upgrade", "--default-pip"])
+                    subprocess.check_call([python_venv_executable, "-m", "pip", "install", "--upgrade", "pip"])
+                    self.progress_output.append("Pip installed and upgraded.")
+                    self.sts_logger.info("Pip successfully installed and upgraded.")
+
+                except subprocess.CalledProcessError as venv_error:
+                    self.sts_logger.error(f"Virtual environment creation failed: {venv_error}")
+                    self.progress_output.append(f"Error: Failed to create virtual environment: {venv_error}")
+                    raise RuntimeError(f"Failed to create virtual environment: {venv_error}")
+
+
+
+
+
+
+            # Install dependencies if requirements.txt exists
+            if os.path.exists(requirements_file):
+                self.sts_logger.info("Installing dependencies...")
+                self.progress_output.append("Installing dependencies...")
+                try:
+                    subprocess.check_call([
+                        os.path.join(venv_dir, "bin", "pip"), "install", "-r", requirements_file
+                    ])
+                    self.progress_output.append("Dependencies installed.")
+                except subprocess.CalledProcessError as pip_error:
+                    raise RuntimeError(f"Failed to install dependencies: {pip_error}")
+            else:
+                self.sts_logger.warning("No requirements.txt found. Skipping dependency installation.")
+                self.progress_output.append("No requirements.txt found. Skipping dependency installation.")
+
+            # Move the plugin to the plugin directory
+            self.sts_logger.info("Moving plugin to final directory...")
+            self.progress_output.append("Moving plugin to final directory...")
+            final_plugin_dir = os.path.join(plugin_dir, os.path.basename(extracted_dir))
+            if os.path.exists(final_plugin_dir):
+                shutil.rmtree(final_plugin_dir)
+            shutil.move(extracted_dir, final_plugin_dir)
+            self.config['plugin_location'] = final_plugin_dir
+            self.save_config()
+            self.progress_output.append("Plugin moved to final directory.")
+
+            self.sts_logger.info("Plugin installed successfully.")
+            self.progress_output.append("Plugin installed successfully.")
+
+        except Exception as e:
+            self.sts_logger.error(f"Error during installation: {e}")
+            self.progress_output.append(f"Error during installation: {e}")
+
+        finally:
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+
+
+#TODO: //
+
 
     def load_config(self):
         """Load the configuration file, creating a default if it does not exist."""
