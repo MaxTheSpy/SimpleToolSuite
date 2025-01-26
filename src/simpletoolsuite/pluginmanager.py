@@ -85,9 +85,6 @@ class PluginManager:
         else:
             print(f"Virtual environment not found at: {venv_path}")
 
-
-
-
     def download_plugin(self, repo_url, plugin_name):
         """Download a plugin from a given repository URL."""
         plugin_url = f"{repo_url}/{plugin_name}"

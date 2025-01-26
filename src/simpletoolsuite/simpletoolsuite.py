@@ -8,8 +8,8 @@ import sys
 import shutil
 import zipfile
 import subprocess
-from PyQt5 import QtWidgets, uic, QtGui, QtCore
-from PyQt5.QtWidgets import QCheckBox, QFileDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QDialog
+from PyQt5 import QtWidgets, uic, QtGui, QtCore # type: ignore
+from PyQt5.QtWidgets import QCheckBox, QFileDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QDialog # type: ignore
 from .pluginmanager import PluginManager
 from .sts_logging import setup_logging, initialize_loggers
 
@@ -25,7 +25,7 @@ def get_default_config_path():
     home = os.path.expanduser("~")
     system = platform.system()
 
-    # Configuration location
+    # Configuration location.
     if system == "Windows":       # Windows
         config_base_dir = os.path.join(home, "AppData", "Local", "SimpleToolSuite")
     elif system == "Darwin":      # MacOS
@@ -33,15 +33,15 @@ def get_default_config_path():
     else:                         # Linux/Unix 
         config_base_dir = os.path.join(home, ".config", "SimpleToolSuite")
 
-    #plugin: Base Path.
-    if system == "Windows":
+    # Plugin Location.
+    if system == "Windows":       # Windows
             plugin_base_dir = os.path.join(home, "AppData", "Local", "SimpleToolSuite", "Plugins")
-    elif system == "Darwin":  # macOS
+    elif system == "Darwin":      # macOS
         plugin_base_dir = os.path.join(home, "Library", "Application Support", "SimpleToolSuite", "Plugins")
-    else:  # Assuming Linux and other UNIX-like systems
+    else:                         # Linux/Unix
         plugin_base_dir = os.path.join(home, ".local", "share", "SimpleToolSuite", "Plugins")
 
-    # Log location
+    # Log location.
     if system == "Windows":       # Windows
         log_base_dir = os.path.join(config_base_dir, "Logs")
     elif system == "Darwin":      # MacOS
@@ -60,7 +60,6 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.config_path, self.plugin_dir, self.log_dir = get_default_config_path()
         self.config = self.load_config()
 
-        """Setup logging"""
         unified_logger = setup_logging(self.log_dir)
         self.sts_logger, self.plugin_logger = initialize_loggers(unified_logger)
 
@@ -96,7 +95,6 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         
         self.tab_widget.setTabsClosable(True)
 
-
     def connect_signals(self):
         try:
             self.launch_button.clicked.disconnect()
@@ -114,7 +112,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         self.button_open_logs.clicked.connect(self.open_logs_folder)
         self.button_install_zip.clicked.connect(self.open_install_zip_dialog)
 
-#TODO: This works from the command prompt but not from the appimage.
+#TODO: This works from the command prompt but not from the appimage. {#c61, 35}
     def open_install_zip_dialog(self):
         self.sts_logger.info("Install From Zip dialog opened.")
         dialog = QDialog(self)
@@ -142,7 +140,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
 
         dialog.setLayout(layout)
         dialog.setModal(False)  # Make the dialog non-blocking
-        dialog.show()  # Use show() instead of exec_()
+        dialog.show()
         self.dialog = dialog  # Keep a reference to the dialog to prevent garbage collection
 
     def browse_zip_file(self, line_edit):
@@ -152,7 +150,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             line_edit.setText(file_path)
 
 
-#TODO: from here:
+# Broken part {#500, 95}
     def install_plugin_from_zip(self, zip_path):
         if not zip_path or not zipfile.is_zipfile(zip_path):
             self.sts_logger.error("Invalid zip file selected.")
@@ -176,7 +174,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             extracted_contents = os.listdir(temp_dir)
             if len(extracted_contents) != 1 or not os.path.isdir(os.path.join(temp_dir, extracted_contents[0])):
                 raise ValueError("Unexpected ZIP structure. Expected a single top-level directory.")
-
+            
             extracted_dir = os.path.join(temp_dir, extracted_contents[0])
             requirements_file = os.path.join(extracted_dir, "requirements.txt")
 
@@ -213,10 +211,6 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
                     raise RuntimeError(f"Failed to create virtual environment: {venv_error}")
 
 
-
-
-
-
             # Install dependencies if requirements.txt exists
             if os.path.exists(requirements_file):
                 self.sts_logger.info("Installing dependencies...")
@@ -242,7 +236,6 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             self.config['plugin_location'] = final_plugin_dir
             self.save_config()
             self.progress_output.append("Plugin moved to final directory.")
-
             self.sts_logger.info("Plugin installed successfully.")
             self.progress_output.append("Plugin installed successfully.")
 
@@ -253,9 +246,6 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         finally:
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
-
-
-#TODO: //
 
 
     def load_config(self):
@@ -274,7 +264,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             default_config = {
                 "dark_mode": False,
                 "plugin_location": default_plugin_dir
-            }
+                 }
             try:
                 with open(self.config_path, 'w') as f:
                     json.dump(default_config, f, indent=4)
@@ -299,7 +289,6 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         except IOError as e:
             self.sts_logger.error(f"Failed to save configuration file: {e}")
 
-
     def apply_config(self):
         self.line_edit_plugin_loc.setText(self.config.get('plugin_location', os.path.join(os.getcwd(), "plugins")))
         dark_mode_enabled = self.config.get('dark_mode', False)
@@ -321,8 +310,8 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         # Hide close buttons on desired tabs (plugins and settings)
         self.tab_widget.tabBar().setTabButton(0, QtWidgets.QTabBar.RightSide, None)
         self.tab_widget.tabBar().setTabButton(1, QtWidgets.QTabBar.RightSide, None)
-        self.tab_widget.setCurrentIndex(0) #Set Plugins Tab as the active tab on startup.
-        self.tab_widget.setTabVisible(2, False)# Ensure the plugin execution tab is initially hidden
+        self.tab_widget.setCurrentIndex(0)            # Set Plugins Tab as the active tab on startup.
+        self.tab_widget.setTabVisible(2, False)       # Ensure the plugin execution tab is initially hidden
         self.tab_widget.tabCloseRequested.connect(self.handle_tab_close)
         self.load_button.clicked.connect(self.reset_plugin_list)
 
@@ -341,21 +330,17 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         """Display plugin metadata in the description list and log any issues."""
         self.description_list.clear()
         plugin_name = item.text()
-
-        # Discover plugins and find the selected one
-        plugins = self.plugin_manager.discover_plugins()
+        plugins = self.plugin_manager.discover_plugins()     # Discover plugins and find the selected one
         selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
 
-        # Log and return if the plugin is not found
-        if not selected_plugin:
+        if not selected_plugin:     # Log and return if the plugin is not found
             self.sts_logger.error(f"Metadata not found for plugin: {plugin_name}")
             self.description_list.addItem("Error: Metadata not found.")
             return
 
         metadata_path = os.path.join(selected_plugin["path"], "metadata.json")
 
-        # Log and return if the metadata file does not exist
-        if not os.path.exists(metadata_path):
+        if not os.path.exists(metadata_path):   # Log and return if the metadata file does not exist
             self.sts_logger.error(f"Missing metadata.json for plugin: {plugin_name}")
             self.description_list.addItem("Error: Missing metadata.json.")
             return
@@ -375,7 +360,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
             "version": "Version",
             "author": "Author",
             "description": "Description"
-        }
+            }
 
         # Add metadata fields to the description list
         if metadata:
@@ -437,8 +422,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         """Launch the selected plugin."""
         selected_item = self.plugin_list.currentItem()
 
-        # Check if no plugin is selected and prevent duplicate logs
-        if not selected_item:
+        if not selected_item:     # Check if no plugin is selected and prevent duplicate logs
             existing_warning = [self.description_list.item(i).text() for i in range(self.description_list.count())]
             if "No plugin selected." not in existing_warning:
                 self.sts_logger.warning("No plugin selected. Launch Plugin action aborted.")
@@ -448,18 +432,16 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
         plugin_name = selected_item.text()
         self.sts_logger.info(f"Launch Plugin button clicked. Selected plugin: '{plugin_name}'.")
 
-        # Discover plugins and log if the plugin is not found
-        plugins = self.plugin_manager.discover_plugins()
+        plugins = self.plugin_manager.discover_plugins()     # Discover plugins and log if the plugin is not found
         selected_plugin = next((p for p in plugins if p["name"] == plugin_name), None)
         if not selected_plugin:
             self.sts_logger.error(f"Plugin '{plugin_name}' not found.")
             self.description_list.addItem("Plugin not found.")
             return
 
-        # Log that the plugin is attempting to launch
-        self.sts_logger.info(f"'{plugin_name}' Attempting To Launch.")
+        self.sts_logger.info(f"'{plugin_name}' Attempting To Launch.") # Log that the plugin is attempting to launch
 
-        # Load and activate the plugin's virtual environment and module
+        """Load and activate the plugin's virtual environment and module"""
         module = self.plugin_manager.load_plugin(selected_plugin["path"], selected_plugin["main"])
         if module and hasattr(module, "main"):
             self.sts_logger.info(f"'{plugin_name}' Launched Successfully.")
@@ -473,7 +455,7 @@ class SimpleToolSuite(QtWidgets.QMainWindow):
                 scroll_area_widget.setLayout(QtWidgets.QVBoxLayout())
                 scroll_area.setWidget(scroll_area_widget)
 
-                # Pass the logger to the plugin's main function
+                # Pass the logger to the plugin's main function 
                 widget = module.main(parent_widget=scroll_area_widget, parent_logger=self.plugin_logger)
 
                 if isinstance(widget, QtWidgets.QWidget):
